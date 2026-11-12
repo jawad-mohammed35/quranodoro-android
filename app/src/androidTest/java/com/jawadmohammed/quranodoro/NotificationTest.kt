@@ -30,6 +30,11 @@ class NotificationTest {
             if (needed)
                 shell("pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS")
             notifyCompletion(context, "Focus")
+            val deadline = System.currentTimeMillis() + 5000
+            while (
+                manager.activeNotifications.none { it.id == 10 } &&
+                    System.currentTimeMillis() < deadline
+            ) Thread.sleep(100)
             val posted = manager.activeNotifications.firstOrNull { it.id == 10 }
             assertNotNull("Completion notification should be posted", posted)
             assertEquals("sessions", posted!!.notification.channelId)
@@ -37,8 +42,8 @@ class NotificationTest {
             assertNotNull(manager.getNotificationChannel("sessions"))
         } finally {
             manager.cancel(10)
-            if (needed)
-                shell("pm revoke ${context.packageName} android.permission.POST_NOTIFICATIONS")
+            // Android kills the instrumented process when a runtime permission is revoked.
+            // Leave the test grant in place; fresh user installations still request permission.
         }
     }
 }
