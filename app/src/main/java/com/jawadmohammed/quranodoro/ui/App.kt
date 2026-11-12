@@ -148,6 +148,12 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
                         if (blur) pageLayer else null,
                         pagePosition,
                     ) { destination ->
+                        if (destinations.none { it.route == nav.currentDestination?.route }) {
+                            nav.popBackStack(selectedTab, inclusive = false)
+                        }
+                        if (destination.route == "home") {
+                            nav.popBackStack("home", inclusive = false)
+                        }
                         if (nav.currentDestination?.route != destination.route) {
                             nav.navigate(destination.route) {
                                 popUpTo(nav.graph.findStartDestination().id) { saveState = true }

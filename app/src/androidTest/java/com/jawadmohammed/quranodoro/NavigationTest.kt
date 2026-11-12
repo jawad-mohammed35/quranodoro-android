@@ -121,7 +121,10 @@ class NavigationTest {
                 "dialog-" + trigger.replace(' ', '-'),
                 root.captureToImage().asAndroidBitmap(),
             )
-            rule.onAllNodesWithText(close).onLast().performClick()
+            val dismiss = rule.onAllNodesWithText(close).onLast()
+            if (trigger == "Create custom preset") dismiss.performScrollTo()
+            dismiss.assertIsDisplayed().performClick()
+            rule.waitUntil(5000) { rule.onAllNodes(isDialog()).fetchSemanticsNodes().isEmpty() }
         }
         rule.onNodeWithText("Edit Dashboard").performClick()
         dialog("Add Widgets", "Done")

@@ -46,7 +46,7 @@ fun WeeklySummary(sessions: List<FocusSession>) {
                     )
                 }
                 QText(
-                    d.format(DateTimeFormatter.ofPattern("EEEEE")),
+                    d.format(DateTimeFormatter.ofPattern("EEEEE", java.util.Locale.ENGLISH)),
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
@@ -88,7 +88,11 @@ fun AnalyticsScreen(vm: AppViewModel) {
                         .filter { YearMonth.from(localDate(it.completedAt)) == month }
                         .sumOf { it.minutes }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    QText(month.format(DateTimeFormatter.ofPattern("MMM yyyy")))
+                    QText(
+                        month.format(
+                            DateTimeFormatter.ofPattern("MMM yyyy", java.util.Locale.ENGLISH),
+                        ),
+                    )
                     QText("$minutes min")
                 }
             }
