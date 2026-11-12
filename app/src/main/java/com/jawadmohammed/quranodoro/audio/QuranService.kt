@@ -25,6 +25,7 @@ class QuranService : MediaSessionService() {
         session = MediaSession.Builder(this, player).build()
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
         if (controllerInfo.isTrusted || controllerInfo.packageName == packageName) session else null
 
