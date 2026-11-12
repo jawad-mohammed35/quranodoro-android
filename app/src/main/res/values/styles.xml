@@ -1,0 +1,13 @@
+<resources>
+    <style name="Theme.Quranodoro" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">#6b9071</item>
+    </style>
+    <style name="Theme.Quranodoro.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#faf8f3</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/brand</item>
+        <item name="postSplashScreenTheme">@style/Theme.Quranodoro</item>
+    </style>
+</resources>
