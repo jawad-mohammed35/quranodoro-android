@@ -136,6 +136,10 @@ fun TasbihScreen(vm: AppViewModel) {
                 "${sessions.count{localDate(it.completedAt)==LocalDate.now()}} completed today · ${sessions.size} all time",
                 style = MaterialTheme.typography.bodyMedium,
             )
+            QText(
+                "${sessions.count { localDate(it.completedAt)>=LocalDate.now().minusDays(6) }} completed in the last 7 days",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             sessions.take(10).forEach {
                 QText(
                     "${localDate(it.completedAt)} · ${it.target} ${it.phrase}",
