@@ -28,8 +28,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 
-val LocalBarInset = staticCompositionLocalOf { 0.dp }
-
 @Composable
 fun GlassNavigation(
     route: String,
@@ -95,8 +93,10 @@ fun GlassNavigation(
         if (backdrop != null) {
             Spacer(
                 Modifier.matchParentSize().blur(12.dp).drawBehind {
-                    val offset = pagePosition - barPosition
-                    translate(offset.x, offset.y) { drawLayer(backdrop) }
+                    // Sample the page edge while keeping the interactive scroll viewport clear.
+                    translate(pagePosition.x - barPosition.x, size.height - backdrop.size.height) {
+                        drawLayer(backdrop)
+                    }
                 },
             )
         }

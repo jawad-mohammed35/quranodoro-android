@@ -69,7 +69,6 @@ fun Page(content: @Composable ColumnScope.() -> Unit) {
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = LocalBarInset.current)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             content = content,

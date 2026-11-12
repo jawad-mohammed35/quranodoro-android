@@ -52,15 +52,13 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
     var dragScrollStart by remember { mutableIntStateOf(0) }
     var viewport by remember { mutableStateOf(Rect.Zero) }
     val edge = with(androidx.compose.ui.platform.LocalDensity.current) { 64.dp.toPx() }
-    val bottomInset =
-        with(androidx.compose.ui.platform.LocalDensity.current) { LocalBarInset.current.toPx() }
-    LaunchedEffect(dragging, bottomInset) {
+    LaunchedEffect(dragging) {
         while (dragging != null) {
             val point = origin + offset
             val amount =
                 when {
                     point.y < viewport.top + edge -> -edge / 6
-                    point.y > viewport.bottom - bottomInset - edge -> edge / 6
+                    point.y > viewport.bottom - edge -> edge / 6
                     else -> 0f
                 }
             if (amount != 0f) scrollState.scrollBy(amount)
@@ -83,10 +81,7 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 ((contentWidth.toPx() - 12.dp.toPx() * (columns - 1)) / columns).toInt().toDp()
             }
         Column(
-            Modifier.fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(bottom = LocalBarInset.current)
-                .padding(20.dp),
+            Modifier.fillMaxSize().verticalScroll(scrollState).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

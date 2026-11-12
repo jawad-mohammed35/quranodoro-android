@@ -159,55 +159,43 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
                 }
             },
         ) { insets ->
-            CompositionLocalProvider(LocalBarInset provides insets.calculateBottomPadding()) {
-                Box(
-                    Modifier.fillMaxSize()
-                        .padding(
-                            top = insets.calculateTopPadding(),
-                            start =
-                                insets.calculateLeftPadding(
-                                    androidx.compose.ui.unit.LayoutDirection.Ltr,
-                                ),
-                            end =
-                                insets.calculateRightPadding(
-                                    androidx.compose.ui.unit.LayoutDirection.Ltr,
-                                ),
-                        )
-                        .onGloballyPositioned { pagePosition = it.positionInRoot() }
-                        .then(
-                            if (blur)
-                                Modifier.drawWithContent {
-                                    pageLayer.record { this@drawWithContent.drawContent() }
-                                    drawLayer(pageLayer)
-                                }
-                            else Modifier,
-                        )
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = .28f),
-                                    MaterialTheme.colorScheme.background,
-                                ),
+            Box(
+                Modifier.fillMaxSize()
+                    .padding(insets)
+                    .onGloballyPositioned { pagePosition = it.positionInRoot() }
+                    .then(
+                        if (blur)
+                            Modifier.drawWithContent {
+                                pageLayer.record { this@drawWithContent.drawContent() }
+                                drawLayer(pageLayer)
+                            }
+                        else Modifier,
+                    )
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = .28f),
+                                MaterialTheme.colorScheme.background,
                             ),
                         ),
+                    ),
+            ) {
+                NavHost(
+                    navController = nav,
+                    startDestination = "home",
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    NavHost(
-                        navController = nav,
-                        startDestination = "home",
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        composable("home") {
-                            HomeScreen(vm) { nav.navigate(it) { launchSingleTop = true } }
-                        }
-                        composable("focus") { FocusScreen(vm) }
-                        composable("quran") { QuranScreen(vm) }
-                        composable("tasbih") { TasbihScreen(vm) }
-                        composable("farm") { FarmScreen(vm) { openPage("about-farm") } }
-                        composable("analytics") { AnalyticsScreen(vm) }
-                        composable("settings") { SettingsScreen(vm, ::openPage) }
-                        composable("about") { AboutScreen() }
-                        composable("about-farm") { AboutFarmScreen() }
+                    composable("home") {
+                        HomeScreen(vm) { nav.navigate(it) { launchSingleTop = true } }
                     }
+                    composable("focus") { FocusScreen(vm) }
+                    composable("quran") { QuranScreen(vm) }
+                    composable("tasbih") { TasbihScreen(vm) }
+                    composable("farm") { FarmScreen(vm) { openPage("about-farm") } }
+                    composable("analytics") { AnalyticsScreen(vm) }
+                    composable("settings") { SettingsScreen(vm, ::openPage) }
+                    composable("about") { AboutScreen() }
+                    composable("about-farm") { AboutFarmScreen() }
                 }
             }
         }
