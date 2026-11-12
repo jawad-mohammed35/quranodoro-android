@@ -28,6 +28,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
       - run: bash scripts/install-sdk.sh
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x gradlew

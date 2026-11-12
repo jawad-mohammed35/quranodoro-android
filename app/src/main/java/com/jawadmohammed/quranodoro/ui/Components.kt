@@ -28,7 +28,9 @@ import androidx.compose.ui.window.Dialog
     Glass(Modifier.fillMaxWidth()) { QText(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold);content() }
 }
 @Composable fun Page(content: @Composable ColumnScope.()->Unit) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp,vertical=16.dp).widthIn(max=840.dp),verticalArrangement=Arrangement.spacedBy(20.dp),content=content)
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+        Column(Modifier.widthIn(max=840.dp).fillMaxWidth().fillMaxHeight().verticalScroll(rememberScrollState()).padding(horizontal=20.dp,vertical=16.dp),verticalArrangement=Arrangement.spacedBy(20.dp),content=content)
+    }
 }
 @Composable fun Confirm(title: String,text: String,onDismiss: ()->Unit,onConfirm: ()->Unit) {
     Dialog(onDismissRequest=onDismiss) { Glass {

@@ -86,6 +86,8 @@ See [docs/QA.md](docs/QA.md) for executed checks and unverified device behaviors
 
 The native layout uses mobile spans rather than desktop pixel resizing. Palm art uses shaded vector paths rather than web illustrations. Shared localization is preserved, with English fallback for newly written Android copy. No authentication or synchronization is present by design.
 
+Screenshots: [Home](docs/screenshots/home.png), [Dark theme](docs/screenshots/home-dark.png), [Focus](docs/screenshots/focus.png), [Quran](docs/screenshots/quran.png), [Tasbih](docs/screenshots/tasbih.png), [Farm](docs/screenshots/farm.png).
+
 Audio metadata/endpoints are adapted from the owner's web catalogue; streams remain on mp3quran.net and no recordings are redistributed. `scripts/verify-audio.ps1` checks ranged responses for all reciters; add `-FullCatalogue` for all 1,368 combinations. This checks HTTP/media availability, not scholarly identity, recording completeness or legal ownership. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License

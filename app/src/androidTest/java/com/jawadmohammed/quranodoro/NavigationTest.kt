@@ -41,22 +41,22 @@ class NavigationTest {
     @Test fun dashboardHideRestoreResizeAndReset() {
         runBlocking{vm.prefs.resetDashboard()};rule.waitForIdle()
         rule.onNodeWithText("Edit Dashboard").performClick()
-        rule.onNodeWithContentDescription("Compact Today's focus").performClick()
+        rule.onNodeWithContentDescription("Compact Today's focus").performScrollTo().performClick()
         rule.waitUntil(5000){"focus" !in vm.preferences.value.wide}
-        rule.onNodeWithContentDescription("Hide Today's focus").performClick()
+        rule.onNodeWithContentDescription("Hide Today's focus").performScrollTo().performClick()
         rule.waitUntil(5000){"focus" in vm.preferences.value.hidden}
-        rule.onNodeWithText("Add Widgets").performClick();rule.onNodeWithText("Today's focus").performClick();rule.onAllNodesWithText("Done").onLast().performClick()
+        rule.onNodeWithText("Add Widgets").performScrollTo().performClick();rule.onNodeWithText("Today's focus").performClick();rule.onAllNodesWithText("Done").onLast().performClick()
         rule.waitUntil(5000){"focus" !in vm.preferences.value.hidden}
-        rule.onNodeWithText("Reset Layout").performClick();rule.onNodeWithText("Confirm").performClick()
+        rule.onNodeWithText("Reset Layout").performScrollTo().performClick();rule.onNodeWithText("Confirm").performClick()
         rule.waitUntil(5000){"focus" in vm.preferences.value.wide}
     }
     @Test fun timerPauseAndRecreationRetainState() {
         vm.resetTimer();rule.onNodeWithTag("tab-focus").performClick()
-        rule.onNodeWithText("Start session").performClick();rule.waitUntil(5000){vm.timer.value.running}
+        rule.onNodeWithText("Start session").performScrollTo().performClick();rule.waitUntil(5000){vm.timer.value.running}
         val before=vm.left.value
         rule.activityRule.scenario.recreate()
         rule.waitUntil(5000){vm.timer.value.running&&vm.left.value<before}
-        rule.onNodeWithText("Pause").performClick();rule.waitUntil(5000){!vm.timer.value.running}
+        rule.onNodeWithText("Pause").performScrollTo().performClick();rule.waitUntil(5000){!vm.timer.value.running}
         val paused=vm.timer.value.remainingMs
         Assert.assertTrue(paused in 1 until 1500000)
         vm.resetTimer()
@@ -66,15 +66,16 @@ class NavigationTest {
         rule.activityRule.scenario.recreate();rule.waitUntil(5000){vm.preferences.value.theme=="Dark"}
     }
     @Test fun dashboardDragReordersWidgets() {
-        runBlocking{vm.prefs.resetDashboard()};rule.waitForIdle()
+        runBlocking{vm.prefs.resetDashboard();vm.prefs.string("order","streak,pomodoros,focus,minutes,orchard,week,tree,reciter,inspiration")};rule.waitUntil(5000){vm.preferences.value.order.first()=="streak"};rule.waitForIdle()
         rule.onNodeWithText("Edit Dashboard").performClick()
-        val first=rule.onNodeWithTag("panel-focus").fetchSemanticsNode().boundsInRoot
-        val second=rule.onNodeWithTag("panel-streak").fetchSemanticsNode().boundsInRoot
+        rule.onNodeWithTag("panel-streak").performScrollTo()
+        val first=rule.onNodeWithTag("panel-streak").fetchSemanticsNode().boundsInRoot
+        val second=rule.onNodeWithTag("panel-pomodoros").fetchSemanticsNode().boundsInRoot
         val delta=first.center-second.center
-        rule.onNodeWithContentDescription("Hold to drag Current streak").performTouchInput {
+        rule.onNodeWithContentDescription("Hold to drag Total Pomodoros").performTouchInput {
             down(center);advanceEventTime(800);moveBy(delta);advanceEventTime(200);up()
         }
-        rule.waitUntil(5000){vm.preferences.value.order.first()=="streak"}
+        rule.waitUntil(5000){vm.preferences.value.order.first()=="pomodoros"}
         runBlocking{vm.prefs.resetDashboard()}
     }
 }
