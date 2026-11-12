@@ -42,11 +42,37 @@ private val Dark =
         error = Color(0xFFCF9186),
     )
 
+val LocalOled = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+private val Oled =
+    Dark.copy(
+        background = Color.Black,
+        surface = Color.Black,
+        surfaceVariant = Color.Black,
+        surfaceDim = Color.Black,
+        surfaceBright = Color.Black,
+        surfaceTint = Color.Black,
+        surfaceContainer = Color.Black,
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color.Black,
+        surfaceContainerHigh = Color.Black,
+        surfaceContainerHighest = Color.Black,
+        primaryContainer = Color.Black,
+        secondaryContainer = Color.Black,
+        tertiaryContainer = Color.Black,
+        outlineVariant = Color(0xFF465449),
+    )
+
 @Composable
 fun QuranodoroTheme(theme: String, content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme =
-            if (theme == "Dark" || theme == "System" && isSystemInDarkTheme()) Dark else Light,
-        content = content,
-    )
+    val colors =
+        when (theme) {
+            "OLED Black" -> Oled
+            "Dark" -> Dark
+            "Light" -> Light
+            else -> if (isSystemInDarkTheme()) Dark else Light
+        }
+    androidx.compose.runtime.CompositionLocalProvider(LocalOled provides (colors === Oled)) {
+        MaterialTheme(colorScheme = colors, content = content)
+    }
 }

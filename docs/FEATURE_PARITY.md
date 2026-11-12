@@ -11,7 +11,7 @@ Reference web revision: `c966a75084a48700527375687780155d4618c790`. Read-only in
 - Farm: all six varieties and seven growth stages, exact web multipliers, diminishing-return focus rewards, one active growing tree and maturation. In-flight sessions retain their tree association.
 - Analytics: weekly daily minutes, monthly focus totals, activity/streak history, overall session counts/minutes/average, current streak and session history.
 - Reminders: all fifteen original verses, hadith and duas, daily deterministic choice plus refresh.
-- Settings: appearance, display name, shared language catalogues, timer/audio/Tasbih/notification controls, favorites, progress export, About Date Farm and separate About the Developer with original external links and information.
+- Settings: appearance, display name, timer/audio/Tasbih/notification controls, favorites, progress export, About Date Farm and separate About the Developer with original external links and information.
 
 ## Native adaptations
 
@@ -21,7 +21,7 @@ Reference web revision: `c966a75084a48700527375687780155d4618c790`. Read-only in
 - Timer deadlines survive UI recreation/process loss, rewards are transactional, and completion jobs use Android WorkManager. Reminders can be delayed by Android battery restrictions; this version does not request exact-alarm access. Auto-start operates in the foreground rather than running unlimited unattended cycles.
 - Media3 replaces browser HTML audio with a media session/service, focus handling, noisy-output pause and system playback controls.
 - Room and DataStore replace browser/Supabase state. JSON backup export uses the Android document picker. No cloud/authentication components or login UI exist.
-- The shared six-language catalogues and Arabic RTL layout are included. Newly written Android-specific descriptive text currently uses English fallback; full native-copy translation remains a localization follow-up.
+- The interface uses English. The Quran player and Tasbih retain their Arabic religious content.
 - Native analytics uses compact bar summaries/activity cells and numerical monthly summaries rather than duplicating every Recharts tooltip/chart type. The recorded session data remains available locally and in export.
 - Phone orientation is portrait; larger devices can use Android's adaptive/window behavior. Home uses one, two or three columns based on width. Other pages remain vertically scrollable.
 

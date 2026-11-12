@@ -153,7 +153,9 @@ fun FarmScreen(vm: AppViewModel, onAbout: () -> Unit) {
                     LinearProgressIndicator(
                         progress = { growthProgress(tree.gp, multiplier) },
                         modifier = Modifier.fillMaxWidth(),
-                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                        trackColor =
+                            if (LocalOled.current) MaterialTheme.colorScheme.outlineVariant
+                            else MaterialTheme.colorScheme.primaryContainer,
                     )
                     QText(
                         "${tree.gp} GP" +

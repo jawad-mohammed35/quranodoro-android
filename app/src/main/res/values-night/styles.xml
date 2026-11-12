@@ -1,7 +1,0 @@
-<resources>
-    <style name="Theme.Quranodoro.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#1e211e</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/brand</item>
-        <item name="postSplashScreenTheme">@style/Theme.Quranodoro</item>
-    </style>
-</resources>

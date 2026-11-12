@@ -53,16 +53,10 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
         Section("Appearance") {
             Picker(
                 "Theme",
-                listOf("System", "Light", "Dark"),
+                listOf("Light", "Dark", "OLED Black", "System"),
                 p.theme,
                 onSelect = { vm.string("theme", it) },
-            )
-            Picker(
-                "Language",
-                languages.keys.toList(),
-                p.language,
-                onSelect = { vm.string("language", it) },
-                text = { languages[it] ?: it },
+                text = { if (it == "System") "System Default" else it },
             )
             var name by remember(p.name) { mutableStateOf(p.name) }
             OutlinedTextField(
@@ -147,7 +141,9 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
         }
         status?.let { QText(it, color = MaterialTheme.colorScheme.primary) }
         Section("About Quranodoro") {
-            QText("A peaceful Islamic productivity companion. Native Android edition 1.0.0 (1).")
+            QText(
+                "A peaceful Islamic productivity companion. Native Android edition ${com.jawadmohammed.quranodoro.BuildConfig.VERSION_NAME} (${com.jawadmohammed.quranodoro.BuildConfig.VERSION_CODE}).",
+            )
             TextButton(onClick = { navigate("about-farm") }) { QText("About the Date Farm") }
             LinkButton("Quranodoro on the web", "https://quranodoro.vercel.app/")
             LinkButton(

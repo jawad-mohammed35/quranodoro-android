@@ -11,19 +11,8 @@ jobs:
   release:
     if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
-    env:
-      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      KEYSTORE_PATH: ${{ github.workspace }}/release-signing.jks
     steps:
       - uses: actions/checkout@v4
-      - name: Require production signing
-        run: |
-          test -n "$KEYSTORE_BASE64" || { echo 'Configure KEYSTORE_BASE64 before publishing a production release.'; exit 1; }
-          test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -39,10 +28,26 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           grep -F "versionName = \"$VERSION\"" app/build.gradle.kts
       - name: Check and build production APK
-        run: ./gradlew testDebugUnitTest lintRelease assembleRelease
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PATH: ${{ runner.temp }}/quranodoro-release.jks
+        run: |
+          set -eu
+          : "${KEYSTORE_BASE64:?Missing keystore}" "${KEYSTORE_PASSWORD:?Missing store password}"
+          : "${KEY_ALIAS:?Missing alias}" "${KEY_PASSWORD:?Missing key password}"
+          umask 077
+          trap 'rm -f "$KEYSTORE_PATH"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          unset KEYSTORE_BASE64
+          ./gradlew --no-daemon testDebugUnitTest lintRelease assembleRelease
       - name: Verify release signature
         run: |
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose app/build/outputs/apk/release/app-release.apk
+          APK=app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" > signer.txt
+          grep -Fx 'Signer #1 certificate SHA-256 digest: 49dedb9ec26f0998ad9c570360a1a06ff88beddde5bffc313bdfbc94682f4c45' signer.txt
           cp app/build/outputs/apk/release/app-release.apk "Quranodoro-${GITHUB_REF_NAME}.apk"
           sha256sum "Quranodoro-${GITHUB_REF_NAME}.apk" > "Quranodoro-${GITHUB_REF_NAME}.apk.sha256"
       - uses: actions/upload-artifact@v4
@@ -53,6 +58,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" "Quranodoro-${GITHUB_REF_NAME}.apk" "Quranodoro-${GITHUB_REF_NAME}.apk.sha256" --verify-tag --title "Quranodoro $GITHUB_REF_NAME" --generate-notes
-      - name: Remove temporary signing material
-        if: always()
-        run: rm -f "$KEYSTORE_PATH"

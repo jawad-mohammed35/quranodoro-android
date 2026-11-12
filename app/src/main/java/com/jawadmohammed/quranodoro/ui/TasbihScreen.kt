@@ -54,7 +54,9 @@ fun TasbihScreen(vm: AppViewModel) {
                         progress = { progress },
                         modifier = Modifier.fillMaxSize(),
                         strokeWidth = 7.dp,
-                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                        trackColor =
+                            if (LocalOled.current) MaterialTheme.colorScheme.outlineVariant
+                            else MaterialTheme.colorScheme.primaryContainer,
                     )
                     Surface(
                         onClick = {
@@ -63,6 +65,13 @@ fun TasbihScreen(vm: AppViewModel) {
                             vm.increment()
                         },
                         shape = CircleShape,
+                        border =
+                            if (LocalOled.current)
+                                androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                )
+                            else null,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier.fillMaxSize().padding(18.dp),
                     ) {

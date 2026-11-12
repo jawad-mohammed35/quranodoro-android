@@ -47,7 +47,9 @@ fun FocusScreen(vm: AppViewModel) {
                         },
                         modifier = Modifier.fillMaxSize(),
                         strokeWidth = 8.dp,
-                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                        trackColor =
+                            if (LocalOled.current) MaterialTheme.colorScheme.outlineVariant
+                            else MaterialTheme.colorScheme.primaryContainer,
                     )
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

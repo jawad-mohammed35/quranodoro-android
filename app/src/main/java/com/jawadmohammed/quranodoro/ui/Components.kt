@@ -17,7 +17,7 @@ fun Glass(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
     Surface(
         modifier,
         shape = RoundedCornerShape(26.dp),
-        color = c.surface.copy(alpha = .93f),
+        color = if (LocalOled.current) Color.Black else c.surface.copy(alpha = .93f),
         border =
             BorderStroke(
                 1.dp,
@@ -69,6 +69,7 @@ fun Page(content: @Composable ColumnScope.() -> Unit) {
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
+                .padding(bottom = LocalBarInset.current)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             content = content,
@@ -173,5 +174,5 @@ fun <T> Picker(
 
 fun time(ms: Long): String {
     val seconds = (ms.coerceAtLeast(0) + 999) / 1000
-    return "%02d:%02d".format(seconds / 60, seconds % 60)
+    return "%02d:%02d".format(java.util.Locale.ENGLISH, seconds / 60, seconds % 60)
 }

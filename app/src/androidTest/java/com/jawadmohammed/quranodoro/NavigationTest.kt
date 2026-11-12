@@ -18,7 +18,8 @@ class NavigationTest {
     @Before
     fun english() {
         runBlocking {
-            vm.prefs.string("language", "en")
+            // Simulate an installation that previously selected Arabic.
+            vm.prefs.string("language", "ar")
             vm.prefs.string("theme", "Light")
             vm.prefs.bool("focusAudio", false)
             vm.prefs.int("reciter", 0)
@@ -27,8 +28,124 @@ class NavigationTest {
         rule.waitForIdle()
     }
 
-    private fun screenshot(name: String) {
-        val image = rule.onRoot().captureToImage().asAndroidBitmap()
+    @Test
+    fun holdAndSlideTracksTabAndCancelsCleanly() {
+        val bar = rule.onNodeWithTag("tab-bar")
+        bar.performTouchInput {
+            down(percentOffset(.1f, .5f))
+            advanceEventTime(800)
+            moveTo(percentOffset(.3f, .5f))
+            moveTo(percentOffset(.7f, .5f))
+            up()
+        }
+        rule.onNodeWithTag("tab-tasbih").assertIsSelected()
+        rule.onNodeWithText("Tap to count").assertIsDisplayed()
+        bar.performTouchInput {
+            down(percentOffset(.7f, .5f))
+            advanceEventTime(800)
+            moveTo(percentOffset(.9f, .5f))
+            cancel()
+        }
+        rule.onNodeWithTag("tab-farm").assertIsSelected()
+        rule.onNodeWithTag("tab-focus").performTouchInput { click() }
+        rule.activityRule.scenario.recreate()
+        rule.onNodeWithTag("tab-focus").assertIsSelected()
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.onNodeWithTag("tab-home").assertIsSelected()
+    }
+
+    @Test
+    fun oledRoutesAndPickerUseBlackSurfaces() {
+        rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithText("Language").assertDoesNotExist()
+        rule.onNodeWithText("Theme").performClick()
+        rule.onNodeWithText("OLED Black").performClick()
+        rule.waitUntil(5000) { vm.preferences.value.theme == "OLED Black" }
+        rule.activityRule.scenario.recreate()
+        fun inspect(name: String, heading: String) {
+            rule.waitUntil(5000) {
+                rule.onAllNodesWithText(heading).fetchSemanticsNodes().isNotEmpty()
+            }
+            rule.onNodeWithText(heading).performScrollTo().assertIsDisplayed()
+            rule.mainClock.advanceTimeBy(800)
+            rule.waitForIdle()
+            val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
+            // Sample a grid across the body, excluding the app and system bars.
+            val pixels =
+                (1..19).flatMap { x ->
+                    (2..17).map { y ->
+                        bitmap.getPixel(bitmap.width * x / 20, bitmap.height * y / 20)
+                    }
+                }
+            Assert.assertTrue(
+                "$name should have a predominantly pure-black body",
+                pixels.count { it == android.graphics.Color.BLACK } > pixels.size / 2,
+            )
+            screenshot("oled-$name")
+        }
+        inspect("settings", "Make it yours")
+        rule.onNodeWithText("Theme").performClick()
+        val dialog = rule.onNode(isDialog()).captureToImage().asAndroidBitmap()
+        Assert.assertEquals(
+            android.graphics.Color.BLACK,
+            dialog.getPixel(dialog.width / 2, dialog.height / 2),
+        )
+        rule.onNodeWithText("Close").performClick()
+        rule.onNodeWithText("Meet the developer").performScrollTo().performClick()
+        inspect("developer", "About the Developer")
+        rule.onNodeWithContentDescription("Analytics").performClick()
+        inspect("analytics", "A little progress, every day")
+        mapOf(
+                "home" to "Assalamu Alaikum",
+                "focus" to "Make room for focus",
+                "quran" to "Listen & reflect",
+                "tasbih" to "Remember, gently",
+                "farm" to "Your date farm",
+            )
+            .forEach { (route, heading) ->
+                rule.onNodeWithTag("tab-$route").performClick()
+                inspect(route, heading)
+            }
+        rule.onNodeWithText("How the farm grows").performScrollTo().performClick()
+        inspect("about-farm", "Small sessions, lasting roots")
+    }
+
+    @Test
+    fun oledNestedControls() {
+        runBlocking { vm.prefs.string("theme", "OLED Black") }
+        fun dialog(trigger: String, close: String) {
+            rule.onNodeWithText(trigger).performScrollTo().performClick()
+            val root = rule.onNode(isDialog())
+            root.assertIsDisplayed()
+            saveScreenshot(
+                "dialog-" + trigger.replace(' ', '-'),
+                root.captureToImage().asAndroidBitmap(),
+            )
+            rule.onAllNodesWithText(close).onLast().performClick()
+        }
+        rule.onNodeWithText("Edit Dashboard").performClick()
+        dialog("Add Widgets", "Done")
+        dialog("Reset Layout", "Cancel")
+        rule.onNodeWithTag("tab-focus").performClick()
+        dialog("Timer preset", "Close")
+        dialog("Create custom preset", "Cancel")
+        dialog("Reset", "Cancel")
+        dialog("Skip", "Cancel")
+        rule.onNodeWithTag("tab-quran").performClick()
+        dialog("Reciter", "Close")
+        dialog("Surah", "Close")
+        rule.onNodeWithTag("tab-tasbih").performClick()
+        dialog("Dhikr", "Close")
+        dialog("Reset counter", "Cancel")
+        rule.onNodeWithTag("tab-farm").performClick()
+        dialog("Date variety", "Close")
+        dialog("Plant Deglet Noor seed", "Cancel")
+    }
+
+    private fun screenshot(name: String) =
+        saveScreenshot(name, rule.onRoot().captureToImage().asAndroidBitmap())
+
+    private fun saveScreenshot(name: String, image: Bitmap) {
         val output = InstrumentationRegistry.getArguments().getString("additionalTestOutputDir")
         val directory =
             File(output ?: File(rule.activity.filesDir, "screenshots").absolutePath).apply {

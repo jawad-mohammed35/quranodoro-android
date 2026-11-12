@@ -10,7 +10,6 @@ val Context.preferences by preferencesDataStore("quranodoro")
 data class UserPreferences(
     val theme: String = "System",
     val name: String = "",
-    val language: String = "en",
     val haptics: Boolean = false,
     val notifications: Boolean = false,
     val autoStart: Boolean = false,
@@ -33,7 +32,6 @@ class Preferences(context: Context) {
             UserPreferences(
                 theme = p[stringPreferencesKey("theme")] ?: "System",
                 name = p[stringPreferencesKey("name")] ?: "",
-                language = p[stringPreferencesKey("language")] ?: "en",
                 haptics = p[booleanPreferencesKey("haptics")] ?: false,
                 notifications = p[booleanPreferencesKey("notifications")] ?: false,
                 autoStart = p[booleanPreferencesKey("autoStart")] ?: false,

@@ -2,22 +2,22 @@
 
 A standalone native Islamic productivity app built with Kotlin and Jetpack Compose. No WebView, accounts, ads, tracking SDKs, or backend dependency. The original [web application](https://github.com/jawad-mohammed35/quranodoro) is a separate project and is not modified by this repository.
 
-Initial testing build: [Quranodoro v1.0.0-debug.1](https://github.com/jawad-mohammed35/quranodoro-android/releases/tag/v1.0.0-debug.1). This is a debug-signed prerelease; production signing remains deferred.
+Initial testing build: [Quranodoro v1.0.0-debug.1](https://github.com/jawad-mohammed35/quranodoro-android/releases/tag/v1.0.0-debug.1). This is a debug-signed prerelease. Production updates use a separate release certificate and cannot replace this debug build in place.
 
 ## Features
 
-- Pastel sage and olive palette, warm light theme, charcoal dark theme, system appearance, translucent rounded surfaces and adaptive bottom navigation.
+- Pastel sage and olive palette, warm light theme, charcoal dark and true-black OLED themes, system appearance, and a floating navigation bar with tap and hold-to-slide controls.
 - Home dashboard: nine widgets, long-press drag handles, accessible move controls, compact/full-width sizing, hide/add widgets and confirmed reset. Layout saves automatically.
 - Pomodoro: five original presets, saved custom presets, focus/short/long breaks, pause/resume/reset/skip, cycle tracking, history and growth rewards.
 - Quran: all 12 web reciters and 114 Surahs, search, favorites, volume, seeking, previous/next, loading/retry states. Media3 service supports background streaming, media notifications and external media controls.
 - Tasbih: dhikr selection, custom phrases, 33/99/100 and custom targets, optional touch feedback, completion history. Switching targets preserves the count.
 - Date Farm: six varieties, seven stages, original growth calculations, active-tree selection, persistent orchard and shaded native palm illustrations.
 - Analytics: weekly focus, 12 monthly summaries, 30-day activity history, current streak, average duration, session history and dhikr/farm totals.
-- Settings, developer information and links, local progress backup export. Six shared web language catalogues with RTL layout for Arabic; Android-specific copy currently falls back to English.
+- Settings, developer information and links, local progress backup export. English interface with Arabic Quran and dhikr content.
 
 ## Open in Android Studio
 
-Requires Android Studio supporting AGP 9.3, JDK 17, SDK platform 37.0 and Build Tools 36.0.0. Minimum runtime Android 8.0 / API 26. Application ID `com.jawadmohammed.quranodoro`, version `1.0.0` / code `1`.
+Requires Android Studio supporting AGP 9.3, JDK 17, SDK platform 37.0 and Build Tools 36.0.0. Minimum runtime Android 8.0 / API 26. Application ID `com.jawadmohammed.quranodoro`, version `1.0.1` / code `2`.
 
 1. Clone this repository and open its root directory in Android Studio.
 2. Install SDK Platform 37.0 and Build Tools 36.0.0 in SDK Manager. Accept the SDK license.
@@ -57,7 +57,7 @@ No location, contacts, microphone, camera or storage permission is requested. An
 
 Never commit a keystore, its password, or `local.properties`. Keep a secure, backed-up copy of the original signing key: Android updates must use the same key.
 
-Create your production signing key using Android Studio **Build > Generate Signed App Bundle or APK > APK > Create new**. Store it outside this checkout. Add these repository **Settings > Secrets and variables > Actions > Repository secrets**:
+Use the original Quranodoro production keystore for every update. Its public certificate fingerprint is pinned in the release workflow. Back up the keystore outside this checkout on encrypted storage, and keep its alias and both passwords in a password manager. The workflow reads four repository Actions secrets:
 
 - `KEYSTORE_BASE64`: Base64 encoding of the entire production `.jks` file.
 - `KEYSTORE_PASSWORD`: keystore password.
@@ -79,8 +79,8 @@ For a release:
 
 1. Update `versionName` and increment `versionCode` in `app/build.gradle.kts`.
 2. Run all checks and device QA. Commit and push.
-3. Push the matching tag, for example `git tag v1.0.0` and `git push origin v1.0.0`.
-4. The release workflow requires all four secrets, checks version/tag agreement, runs unit tests and lint, builds and verifies the production APK, and publishes `Quranodoro-v1.0.0.apk` plus its SHA-256 checksum.
+3. Push the matching tag, for example `git tag v1.0.1` and `git push origin v1.0.1`.
+4. The release workflow requires all four secrets, checks version/tag agreement, runs unit tests and lint, builds and verifies the production APK, and publishes `Quranodoro-v1.0.1.apk` plus its SHA-256 checksum.
 
 Missing signing secrets fail the workflow before publication. No debug APK is substituted. Ordinary CI uploads a clearly named debug artifact. Any initial testing prerelease is explicitly labeled debug and is not a production release. A production-signed APK cannot update a debug-signed installation; export progress before removing a test installation.
 
@@ -88,7 +88,7 @@ Missing signing secrets fail the workflow before publication. No debug APK is su
 
 See [docs/QA.md](docs/QA.md) for executed checks and unverified device behaviors and [docs/FEATURE_PARITY.md](docs/FEATURE_PARITY.md) for the web-to-native mapping. A successful build is not a claim that every OEM, Bluetooth device or tablet has been tested.
 
-The native layout uses mobile spans rather than desktop pixel resizing. Palm art uses shaded vector paths rather than web illustrations. Shared localization is preserved, with English fallback for newly written Android copy. No authentication or synchronization is present by design.
+The native layout uses mobile spans rather than desktop pixel resizing. Palm art uses shaded vector paths rather than web illustrations. The interface is English-only. Arabic Quran and dhikr content is preserved. No authentication or synchronization is present by design.
 
 Screenshots: [Home](docs/screenshots/home.png), [Dark theme](docs/screenshots/home-dark.png), [Focus](docs/screenshots/focus.png), [Quran](docs/screenshots/quran.png), [Tasbih](docs/screenshots/tasbih.png), [Farm](docs/screenshots/farm.png).
 
