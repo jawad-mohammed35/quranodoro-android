@@ -116,6 +116,29 @@ class NavigationTest {
     }
 
     @Test
+    fun compactDashboardWidgetsShareTheirRow() {
+        runBlocking { vm.prefs.resetDashboard() }
+        rule.waitUntil(5000) {
+            vm.preferences.value.order.first() == "focus" &&
+                vm.preferences.value.hidden.isEmpty() &&
+                "focus" in vm.preferences.value.wide
+        }
+        rule.waitForIdle()
+        rule.onNodeWithTag("panel-streak").performScrollTo()
+        if (rule.activity.resources.configuration.screenWidthDp >= 340) {
+            val first = rule.onNodeWithTag("panel-streak").fetchSemanticsNode().boundsInRoot
+            val second = rule.onNodeWithTag("panel-pomodoros").fetchSemanticsNode().boundsInRoot
+            Assert.assertEquals(
+                "Compact cards should occupy the same row",
+                first.top,
+                second.top,
+                2f,
+            )
+            Assert.assertTrue("Compact cards must not overlap", second.left >= first.right)
+        }
+    }
+
+    @Test
     fun settingsThemeAndBackNavigation() {
         rule.onNodeWithContentDescription("Settings").performClick()
         rule.onNodeWithText("Theme").performScrollTo().performClick()

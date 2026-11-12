@@ -76,7 +76,10 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
     ) {
         val columns = if (maxWidth < 340.dp) 1 else if (maxWidth > 720.dp) 3 else 2
         val contentWidth = maxWidth - 40.dp
-        val cellWidth = (contentWidth - 12.dp * (columns - 1)) / columns
+        val cellWidth =
+            with(androidx.compose.ui.platform.LocalDensity.current) {
+                ((contentWidth.toPx() - 12.dp.toPx() * (columns - 1)) / columns).toInt().toDp()
+            }
         Column(
             Modifier.fillMaxSize().verticalScroll(scrollState).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
