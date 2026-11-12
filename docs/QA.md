@@ -12,6 +12,8 @@ The runs included real streamed playback with the screen off, notification deliv
 
 An Arabic (Egypt) Android locale override retained the English interface. System Default followed Android day/night changes, and a cold launch restored OLED Black. After a force-stop, the timer advanced 12 seconds over 12.10 seconds of wall time.
 
+The [final CI run](https://github.com/jawad-mohammed35/quranodoro-android/actions/runs/43240727158) passed on API 26 and 35. The [release workflow](https://github.com/jawad-mohammed35/quranodoro-android/actions/runs/43241648795) signed the APK and checked its certificate. An anonymous download matched the published SHA-256 checksum. On a fresh API 35 emulator, installing the downloaded APK, selecting OLED, counting a Tasbih tap and reinstalling the same APK with `adb install -r` preserved both the theme and count. The emulator reported 10 janky frames among 305 frames during 20 rapid tab taps (95th percentile 44 ms). No app crash or ANR appeared in that run's exit history.
+
 Physical OLED appearance, OEM Doze, Bluetooth interruptions, refresh-rate behavior, long-duration battery use and memory leaks require further device testing.
 
 ## Version 1.0.0 debug prerelease
