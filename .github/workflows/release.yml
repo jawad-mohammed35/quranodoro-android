@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}

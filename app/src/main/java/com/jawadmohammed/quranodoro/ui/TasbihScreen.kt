@@ -16,35 +16,139 @@ import com.jawadmohammed.quranodoro.AppViewModel
 import com.jawadmohammed.quranodoro.data.localDate
 import java.time.LocalDate
 
-@Composable fun TasbihScreen(vm: AppViewModel) {
-    val s by vm.tasbih.collectAsStateWithLifecycle();val p by vm.preferences.collectAsStateWithLifecycle();val sessions by vm.dhikr.collectAsStateWithLifecycle()
-    var reset by remember{mutableStateOf(false)};var custom by remember{mutableStateOf("")};var phrase by remember(s.phrase){mutableStateOf(s.phrase)}
-    val haptic=LocalHapticFeedback.current;val progress by animateFloatAsState((s.count.toFloat()/s.target).coerceIn(0f,1f),label="dhikr progress")
+@Composable
+fun TasbihScreen(vm: AppViewModel) {
+    val s by vm.tasbih.collectAsStateWithLifecycle()
+    val p by vm.preferences.collectAsStateWithLifecycle()
+    val sessions by vm.dhikr.collectAsStateWithLifecycle()
+    var reset by remember { mutableStateOf(false) }
+    var custom by remember { mutableStateOf("") }
+    var phrase by remember(s.phrase) { mutableStateOf(s.phrase) }
+    val haptic = LocalHapticFeedback.current
+    val progress by
+        animateFloatAsState(
+            (s.count.toFloat() / s.target).coerceIn(0f, 1f),
+            label = "dhikr progress",
+        )
     Page {
-        Heading("Remember, gently","A quiet moment for your heart.")
+        Heading("Remember, gently", "A quiet moment for your heart.")
         Glass(Modifier.fillMaxWidth()) {
-            Picker("Dhikr",listOf("SubhanAllah","Alhamdulillah","Allahu Akbar","La ilaha illa Allah","Astaghfirullah",s.phrase).distinct(),s.phrase,onSelect=vm::phrase)
-            BoxWithConstraints(Modifier.fillMaxWidth(),contentAlignment=Alignment.Center) {
-                val diameter=minOf(maxWidth,280.dp)
-                Box(Modifier.size(diameter),contentAlignment=Alignment.Center) {
-                    CircularProgressIndicator(progress={progress},modifier=Modifier.fillMaxSize(),strokeWidth=7.dp,trackColor=MaterialTheme.colorScheme.primaryContainer)
-                    Surface(onClick={if(p.haptics)haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);vm.increment()},shape=CircleShape,color=MaterialTheme.colorScheme.primaryContainer,modifier=Modifier.fillMaxSize().padding(18.dp)) {
-                        Column(Modifier.padding(16.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){QText(s.count.toString(),fontSize=58.sp,fontWeight=FontWeight.Light);QText("of ${s.target}");Spacer(Modifier.height(14.dp));QText("Tap to count",style=MaterialTheme.typography.labelLarge)}
+            Picker(
+                "Dhikr",
+                listOf(
+                        "SubhanAllah",
+                        "Alhamdulillah",
+                        "Allahu Akbar",
+                        "La ilaha illa Allah",
+                        "Astaghfirullah",
+                        s.phrase,
+                    )
+                    .distinct(),
+                s.phrase,
+                onSelect = vm::phrase,
+            )
+            BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                val diameter = minOf(maxWidth, 280.dp)
+                Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxSize(),
+                        strokeWidth = 7.dp,
+                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                    )
+                    Surface(
+                        onClick = {
+                            if (p.haptics)
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            vm.increment()
+                        },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.fillMaxSize().padding(18.dp),
+                    ) {
+                        Column(
+                            Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            QText(
+                                s.count.toString(),
+                                fontSize = 58.sp,
+                                fontWeight = FontWeight.Light,
+                            )
+                            QText("of ${s.target}")
+                            Spacer(Modifier.height(14.dp))
+                            QText("Tap to count", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
             }
-            if(s.count>=s.target) QText("Alhamdulillah. Your target is complete.",color=MaterialTheme.colorScheme.primary)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){listOf(33,99,100).forEach {n->FilterChip(selected=s.target==n,onClick={vm.target(n)},label={QText(n.toString())})}}
-            OutlinedTextField(custom,{custom=it.filter(Char::isDigit).take(4)},label={QText("Custom target (1–9999)")},singleLine=true,modifier=Modifier.fillMaxWidth(),keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(keyboardType=androidx.compose.ui.text.input.KeyboardType.Number),trailingIcon={TextButton(enabled=(custom.toIntOrNull()?:0)>0,onClick={vm.target(custom.toInt());custom=""}){QText("Set")}})
-            TextButton(onClick={reset=true},modifier=Modifier.fillMaxWidth()){QText("Reset counter")}
+            if (s.count >= s.target)
+                QText(
+                    "Alhamdulillah. Your target is complete.",
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(33, 99, 100).forEach { n ->
+                    FilterChip(
+                        selected = s.target == n,
+                        onClick = { vm.target(n) },
+                        label = { QText(n.toString()) },
+                    )
+                }
+            }
+            OutlinedTextField(
+                custom,
+                { custom = it.filter(Char::isDigit).take(4) },
+                label = { QText("Custom target (1–9999)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions =
+                    androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    ),
+                trailingIcon = {
+                    TextButton(
+                        enabled = (custom.toIntOrNull() ?: 0) > 0,
+                        onClick = {
+                            vm.target(custom.toInt())
+                            custom = ""
+                        },
+                    ) {
+                        QText("Set")
+                    }
+                },
+            )
+            TextButton(onClick = { reset = true }, modifier = Modifier.fillMaxWidth()) {
+                QText("Reset counter")
+            }
         }
         Section("Your practice") {
-            Toggle("Touch feedback",value=p.haptics,onChange={vm.bool("haptics",it)})
-            OutlinedTextField(phrase,{phrase=it.take(160)},label={QText("Custom dhikr")},modifier=Modifier.fillMaxWidth())
-            TextButton(onClick={vm.phrase(phrase)}){QText("Use custom dhikr")}
-            QText("${sessions.count{localDate(it.completedAt)==LocalDate.now()}} completed today · ${sessions.size} all time",style=MaterialTheme.typography.bodyMedium)
-            sessions.take(10).forEach{QText("${localDate(it.completedAt)} · ${it.target} ${it.phrase}",style=MaterialTheme.typography.bodySmall)}
+            Toggle("Touch feedback", value = p.haptics, onChange = { vm.bool("haptics", it) })
+            OutlinedTextField(
+                phrase,
+                { phrase = it.take(160) },
+                label = { QText("Custom dhikr") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextButton(onClick = { vm.phrase(phrase) }) { QText("Use custom dhikr") }
+            QText(
+                "${sessions.count{localDate(it.completedAt)==LocalDate.now()}} completed today · ${sessions.size} all time",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            sessions.take(10).forEach {
+                QText(
+                    "${localDate(it.completedAt)} · ${it.target} ${it.phrase}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
-    if(reset)Confirm("Begin again?","Reset the current count to zero. Completed dhikr sessions stay in your history.",{reset=false},vm::resetTasbih)
+    if (reset)
+        Confirm(
+            "Begin again?",
+            "Reset the current count to zero. Completed dhikr sessions stay in your history.",
+            { reset = false },
+            vm::resetTasbih,
+        )
 }
