@@ -12,6 +12,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.jawadmohammed.quranodoro.audio.QuranService
 import com.jawadmohammed.quranodoro.data.reciters
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -72,7 +73,10 @@ class AudioPlaybackTest {
             }
             Thread.sleep(700)
             assertTrue(position() >= 5000)
-            main { player.stop() }
+            main {
+                player.pause()
+                player.stop()
+            }
             lateinit var model: AppViewModel
             scenario.onActivity {
                 model = ViewModelProvider(it)[AppViewModel::class.java]
@@ -95,6 +99,15 @@ class AudioPlaybackTest {
             main { model.selectAudio(reciter = 0, surah = 1) }
             waitForSelection("alafasy-1")
         } finally {
+            main {
+                player.pause()
+                player.stop()
+            }
+            runBlocking {
+                val app = context.applicationContext as QuranodoroApp
+                app.preferences.int("reciter", 0)
+                app.preferences.int("surah", 1)
+            }
             instrumentation.uiAutomation.executeShellCommand("input keyevent 224").close()
             instrumentation.uiAutomation.executeShellCommand("input keyevent 82").close()
             main { MediaController.releaseFuture(future) }

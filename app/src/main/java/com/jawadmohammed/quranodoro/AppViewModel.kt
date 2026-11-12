@@ -325,10 +325,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleAudio() {
-        if (playing.value) controller?.pause() else play()
+        if (controller?.playWhenReady == true && audioError.value == null) controller?.pause()
+        else play()
     }
 
     fun stopAudio() {
+        controller?.pause()
         controller?.stop()
         controller?.seekTo(0)
         position.value = 0

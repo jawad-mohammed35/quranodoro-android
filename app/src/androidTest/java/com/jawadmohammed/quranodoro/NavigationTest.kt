@@ -21,6 +21,8 @@ class NavigationTest {
             vm.prefs.string("language", "en")
             vm.prefs.string("theme", "Light")
             vm.prefs.bool("focusAudio", false)
+            vm.prefs.int("reciter", 0)
+            vm.prefs.int("surah", 1)
         }
         rule.waitForIdle()
     }
