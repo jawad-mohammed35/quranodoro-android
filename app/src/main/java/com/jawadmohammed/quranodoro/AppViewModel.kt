@@ -42,6 +42,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val duration = MutableStateFlow(0L)
     val initialized = MutableStateFlow(false)
     private val timerMutex = Mutex()
+    private val audioMutex = Mutex()
     val foreground = MutableStateFlow(false)
     private var controller: MediaController? = null
     private val future =
@@ -317,20 +318,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         c.volume = p.volume
         val id = "${reciter.id}-${surah.number}"
         if (c.currentMediaItem?.mediaId != id || c.playbackState == Player.STATE_IDLE) {
-            val list = surahs.map { s ->
-                MediaItem.Builder()
-                    .setMediaId("${reciter.id}-${s.number}")
-                    .setUri(reciter.url(s.number))
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle("${s.number}. ${s.name}")
-                            .setArtist(reciter.name)
-                            .setAlbumTitle("Quranodoro")
-                            .build(),
-                    )
-                    .build()
-            }
-            c.setMediaItems(list, surah.number - 1, 0)
+            c.setMediaItems(playlist(reciter), surah.number - 1, 0)
             c.prepare()
         }
         c.play()
@@ -351,14 +339,39 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         reciter: Int = preferences.value.reciter,
         surah: Int = preferences.value.surah,
     ) = run {
-        val resume = playing.value
-        controller?.pause()
-        prefs.int("reciter", reciter.coerceIn(reciters.indices))
-        prefs.int("surah", surah.coerceIn(1, 114))
-        if (resume) {
-            preferences.first { it.reciter == reciter && it.surah == surah }
-            play()
+        audioMutex.withLock {
+            val selectedReciter = reciter.coerceIn(reciters.indices)
+            val selectedSurah = surah.coerceIn(1, 114)
+            val resume = controller?.playWhenReady == true
+            controller?.pause()
+            prefs.int("reciter", selectedReciter)
+            prefs.int("surah", selectedSurah)
+            audioError.value = null
+            position.value = 0
+            duration.value = 0
+            controller?.let { player ->
+                player.stop()
+                player.setMediaItems(playlist(reciters[selectedReciter]), selectedSurah - 1, 0)
+                if (resume) {
+                    player.prepare()
+                    player.play()
+                }
+            }
         }
+    }
+
+    private fun playlist(reciter: Reciter) = surahs.map { surah ->
+        MediaItem.Builder()
+            .setMediaId("${reciter.id}-${surah.number}")
+            .setUri(reciter.url(surah.number))
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle("${surah.number}. ${surah.name}")
+                    .setArtist(reciter.name)
+                    .setAlbumTitle("Quranodoro")
+                    .build(),
+            )
+            .build()
     }
 
     fun seek(ms: Long) {

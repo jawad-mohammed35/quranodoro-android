@@ -2,6 +2,7 @@ package com.jawadmohammed.quranodoro
 
 import android.content.ComponentName
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -72,6 +73,27 @@ class AudioPlaybackTest {
             Thread.sleep(700)
             assertTrue(position() >= 5000)
             main { player.stop() }
+            lateinit var model: AppViewModel
+            scenario.onActivity {
+                model = ViewModelProvider(it)[AppViewModel::class.java]
+                model.selectAudio(reciter = 0, surah = 18)
+            }
+            fun waitForSelection(id: String) {
+                var actual = ""
+                val until = System.currentTimeMillis() + 5000
+                while (actual != id && System.currentTimeMillis() < until) {
+                    main { actual = player.currentMediaItem?.mediaId.orEmpty() }
+                    Thread.sleep(50)
+                }
+                assertEquals(id, actual)
+            }
+            waitForSelection("alafasy-18")
+            assertEquals(0L, position())
+            main {
+                assertFalse("A paused selection should not start streaming", player.playWhenReady)
+            }
+            main { model.selectAudio(reciter = 0, surah = 1) }
+            waitForSelection("alafasy-1")
         } finally {
             instrumentation.uiAutomation.executeShellCommand("input keyevent 224").close()
             instrumentation.uiAutomation.executeShellCommand("input keyevent 82").close()

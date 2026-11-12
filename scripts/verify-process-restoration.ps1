@@ -22,7 +22,7 @@ function Read-Timer {
 }
 & adb shell am start -n "$applicationId/.MainActivity" | Out-Null
 Start-Sleep -Seconds 1
-Tap-Node "//node[@content-desc='Focus']"
+Tap-Node "(//node[@text='Focus'])[last()]"
 Tap-Node "//node[@text='Start session']"
 $before=Read-Timer
 $start=Get-Date
@@ -32,7 +32,7 @@ Start-Sleep -Seconds 3
 Start-Sleep -Seconds 1
 & adb shell am start -n "$applicationId/.MainActivity" | Out-Null
 Start-Sleep -Seconds 1
-Tap-Node "//node[@content-desc='Focus']"
+Tap-Node "(//node[@text='Focus'])[last()]"
 $after=Read-Timer
 $elapsed=((Get-Date)-$start).TotalSeconds
 $difference=$before-$after

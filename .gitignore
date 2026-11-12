@@ -1,4 +1,6 @@
 .gradle/
+.kotlin/
+dist/
 **/build/
 local.properties
 .idea/
