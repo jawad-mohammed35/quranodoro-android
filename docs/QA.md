@@ -1,8 +1,22 @@
 # QA record
 
-This is a debug testing prerelease. It is not a production-signed release or a claim of universal device compatibility.
+## Version 1.0.1
 
-## Executed locally
+The Android 15 emulator passed all 19 instrumentation tests at each of three phone configurations with gesture navigation enabled:
+
+- 720 × 1280 at 360 dpi, 320 dp wide, font scale 1.3.
+- 1080 × 2400 at 420 dpi, 411 dp wide, font scale 1.0.
+- 1440 × 3120 at 480 dpi, 480 dp wide, font scale 1.1.
+
+The runs included real streamed playback with the screen off, notification delivery, Room persistence, timer restoration, dashboard drag and resize, tap and hold-to-slide navigation, cancellation, Back and activity recreation. All ten domain unit tests passed. The OLED tests sampled rendered background pixels on nine pages and the theme picker. Additional screenshots covered twelve nested pickers, editors and confirmations. Compact-layout testing caught a navigation bar overlapping scroll targets and a nested back-stack restoration problem. Both have regression coverage.
+
+An Arabic (Egypt) Android locale override retained the English interface. System Default followed Android day/night changes, and a cold launch restored OLED Black. After a force-stop, the timer advanced 12 seconds over 12.10 seconds of wall time.
+
+Physical OLED appearance, OEM Doze, Bluetooth interruptions, refresh-rate behavior, long-duration battery use and memory leaks require further device testing.
+
+## Version 1.0.0 debug prerelease
+
+### Executed locally
 
 - Native APK compiled with JDK 17, AGP 9.3.3, Gradle 9.5.0 and SDK 37.0, minimum API 26.
 - Full local run: 10 unit tests and 16 instrumentation tests passed, including the opt-in network media test and notification delivery. No tests were skipped in that run. Debug and unsigned release builds and both lint variants passed.
@@ -24,7 +38,7 @@ The emulator lost Android system services once during an early run. It was cold-
 
 The final implementation commit passed both [GitHub Actions build and emulator jobs](https://github.com/jawad-mohammed35/quranodoro-android/actions/runs/43135110033). CI intentionally skips the opt-in network audio test; the full local run included it.
 
-## Still requiring broader device QA
+### Outstanding at the time of the prerelease
 
 - Physical-device Bluetooth controls, calls/audio-focus interruption and different OEM background policies.
 - Long-duration Doze notification latency and notification-permission denial/revocation across OS versions.

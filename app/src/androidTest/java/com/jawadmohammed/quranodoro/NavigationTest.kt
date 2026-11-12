@@ -85,7 +85,7 @@ class NavigationTest {
         }
         inspect("settings", "Make it yours")
         rule.onNodeWithText("Theme").performClick()
-        val dialog = rule.onNode(isDialog()).captureToImage().asAndroidBitmap()
+        val dialog = captureDialog()
         Assert.assertEquals(
             android.graphics.Color.BLACK,
             dialog.getPixel(dialog.width / 2, dialog.height / 2),
@@ -119,7 +119,7 @@ class NavigationTest {
             root.assertIsDisplayed()
             saveScreenshot(
                 "dialog-" + trigger.replace(' ', '-'),
-                root.captureToImage().asAndroidBitmap(),
+                captureDialog(),
             )
             val dismiss = rule.onAllNodesWithText(close).onLast()
             if (trigger == "Create custom preset") dismiss.performScrollTo()
@@ -143,6 +143,15 @@ class NavigationTest {
         rule.onNodeWithTag("tab-farm").performClick()
         dialog("Date variety", "Close")
         dialog("Plant Deglet Noor seed", "Cancel")
+    }
+
+    private fun captureDialog(): Bitmap {
+        rule.waitForIdle()
+        // Compose cannot capture a dialog window on API 26 or 27.
+        if (android.os.Build.VERSION.SDK_INT < 28) {
+            return InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        }
+        return rule.onNode(isDialog()).captureToImage().asAndroidBitmap()
     }
 
     private fun screenshot(name: String) =

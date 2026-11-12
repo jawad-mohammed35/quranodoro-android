@@ -3,9 +3,18 @@ $applicationId='com.jawadmohammed.quranodoro'
 $scratch=Join-Path $PSScriptRoot '../.tools'
 New-Item -ItemType Directory -Force $scratch | Out-Null
 function Read-Window {
-    & adb shell uiautomator dump --compressed /sdcard/quranodoro-qa.xml | Out-Null
-    & adb pull /sdcard/quranodoro-qa.xml "$scratch/window.xml" 2>&1 | Out-Null
-    [xml](Get-Content "$scratch/window.xml" -Raw)
+    for ($attempt=0; $attempt -lt 5; $attempt++) {
+        $result = & adb shell uiautomator dump --compressed /sdcard/quranodoro-qa.xml 2>&1
+        if ($result -match 'dumped to:') {
+            & adb pull /sdcard/quranodoro-qa.xml "$scratch/window.xml" 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                $document = [xml](Get-Content "$scratch/window.xml" -Raw)
+                if ($document.SelectSingleNode("//node[@package='$applicationId']")) { return $document }
+            }
+        }
+        Start-Sleep -Milliseconds 300
+    }
+    throw 'Could not read a fresh app window'
 }
 function Tap-Node([string]$xpath) {
     $document=Read-Window
@@ -23,6 +32,10 @@ function Read-Timer {
 & adb shell am start -n "$applicationId/.MainActivity" | Out-Null
 Start-Sleep -Seconds 1
 Tap-Node "(//node[@text='Focus'])[last()]"
+if (!(Read-Window).SelectSingleNode("//node[@text='Start session']")) {
+    Tap-Node "//node[@text='Reset']"
+    Tap-Node "//node[@text='Confirm']"
+}
 Tap-Node "//node[@text='Start session']"
 $before=Read-Timer
 $start=Get-Date
