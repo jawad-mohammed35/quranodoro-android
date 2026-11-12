@@ -2,6 +2,8 @@
 
 A standalone native Islamic productivity app built with Kotlin and Jetpack Compose. No WebView, accounts, ads, tracking SDKs, or backend dependency. The original [web application](https://github.com/jawad-mohammed35/quranodoro) is a separate project and is not modified by this repository.
 
+Initial testing build: [Quranodoro v1.0.0-debug.1](https://github.com/jawad-mohammed35/quranodoro-android/releases/tag/v1.0.0-debug.1). This is a debug-signed prerelease; production signing remains deferred.
+
 ## Features
 
 - Pastel sage and olive palette, warm light theme, charcoal dark theme, system appearance, translucent rounded surfaces and adaptive bottom navigation.
@@ -46,6 +48,8 @@ Only the audio service uses a foreground service, while playing media. Audio foc
 - `ACCESS_NETWORK_STATE`: Android WorkManager network awareness.
 - `POST_NOTIFICATIONS`: requested only when enabling session reminders on Android 13+.
 - `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MEDIA_PLAYBACK`: ongoing user-requested audio, media notification and lock-screen controls.
+- `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED`: added by WorkManager to finish short scheduled jobs reliably and restore scheduling after restart. They do not run a continuous timer service.
+- `com.jawadmohammed.quranodoro.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`: AndroidX's app-private signature permission for internal receiver compatibility; it grants no access to personal data.
 
 No location, contacts, microphone, camera or storage permission is requested. Android's document picker handles export. Android cloud backup is disabled; the app does not transmit progress. External developer links open only when tapped. See [PRIVACY.md](PRIVACY.md).
 
