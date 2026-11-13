@@ -1,5 +1,13 @@
 # QA record
 
+## Version 1.1.1 follow-up
+
+Local API 26 validation passed all 25 instrumentation tests with real network audio enabled, including the legacy OLED dialog capture and three consecutive Pause/Resume cycles. Unit tests, debug/release lint and release assembly also passed. The API 35 suite passed all 25 tests for the redesign before this follow-up.
+
+CI exposed a race where a repeated service start could overwrite the observer's updated Pause/Resume notification with the startup placeholder. The placeholder now posts only for a newly created service. Paused sessions retain an idle foreground service with no ticker, polling or wake lock; reset/stop/completion still end it. Auto-start now checks that the app is still foregrounded after asynchronous completion. Arabic reciter/Surah search text is retained in the compact selectors.
+
+CI's software emulator emitted invalid graphics-buffer errors around dialog captures. Its Vulkan backend is disabled explicitly, matching the stable local legacy setup. CI also retains device logs and screenshot artifacts. Signed 1.1.1 publication and follow-up upgrade results are recorded below once complete.
+
 ## Version 1.1.0 (November 13, 2026)
 
 Executed locally on the Android 15 / API 35 emulator:

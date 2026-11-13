@@ -150,12 +150,16 @@ class RefinementTest {
         rule.waitUntil(5000) { posted()?.actions?.firstOrNull()?.title == "Pause" }
         assertTrue(posted()!!.extras.getBoolean("android.showChronometer"))
         assertTrue(posted()!!.extras.getBoolean("android.chronometerCountDown"))
-        posted()!!.actions[0].actionIntent.send()
-        rule.waitUntil(5000) { !vm.timer.value.running && posted()?.actions?.firstOrNull()?.title == "Resume" }
-        val left = vm.timer.value.remainingMs
-        posted()!!.actions[0].actionIntent.send()
-        rule.waitUntil(5000) { vm.timer.value.running && posted()?.actions?.firstOrNull()?.title == "Pause" }
-        assertTrue(vm.timer.value.endElapsed - SystemClock.elapsedRealtime() <= left)
+        var left = vm.timer.value.remainingMs
+        repeat(3) {
+            posted()!!.actions[0].actionIntent.send()
+            rule.waitUntil(10000) { !vm.timer.value.running && posted()?.actions?.firstOrNull()?.title == "Resume" }
+            assertEquals("Focus paused", posted()!!.extras.getString("android.title"))
+            left = vm.timer.value.remainingMs
+            posted()!!.actions[0].actionIntent.send()
+            rule.waitUntil(10000) { vm.timer.value.running && posted()?.actions?.firstOrNull()?.title == "Pause" }
+            assertTrue(vm.timer.value.endElapsed - SystemClock.elapsedRealtime() <= left)
+        }
         val beforeBackground = vm.left.value
         val model = vm
         rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)

@@ -91,6 +91,7 @@ class NavigationTest {
         // capture the dialog alone. One center pixel can land on a text glyph or
         // a not-yet-presented system frame. Check the central surface region once
         // the window has rendered, keeping the assertion on actual black pixels.
+        saveScreenshot("oled-picker-full-window", captureDialog())
         rule.waitUntil(5000) {
             val dialog = captureDialog()
             val pixels = (2..8).flatMap { x -> (4..6).map { y ->

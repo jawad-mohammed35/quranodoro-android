@@ -123,7 +123,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         ) {
                             if (preferences.value.notifications) notifyCompletion(app, t.phase)
                             if (preferences.value.focusAudio) controller?.pause()
-                            if (preferences.value.autoStart) startInternal()
+                            if (preferences.value.autoStart && foreground.value) startInternal()
                         }
                     }
                 }

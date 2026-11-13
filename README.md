@@ -19,7 +19,7 @@ Initial testing build: [Quranodoro v1.0.0-debug.1](https://github.com/jawad-moha
 
 ## Open in Android Studio
 
-Requires Android Studio supporting AGP 9.3, JDK 17, SDK platform 37.0 and Build Tools 36.0.0. Minimum runtime Android 8.0 / API 26. Application ID `com.jawadmohammed.quranodoro`, version `1.1.0` / code `3`.
+Requires Android Studio supporting AGP 9.3, JDK 17, SDK platform 37.0 and Build Tools 36.0.0. Minimum runtime Android 8.0 / API 26. Application ID `com.jawadmohammed.quranodoro`, version `1.1.1` / code `4`.
 
 1. Clone this repository and open its root directory in Android Studio.
 2. Install SDK Platform 37.0 and Build Tools 36.0.0 in SDK Manager. Accept the SDK license.
@@ -40,7 +40,7 @@ Room schema version 1 stores timer state, focus sessions, trees, Tasbih progress
 
 The timer stores both monotonic and wall-clock deadlines plus the device boot count. The monotonic deadline wins within a boot, with wall-clock fallback after reboot. Completion and farm rewards run in a single Room transaction keyed by a session UUID, so reopening and competing completion jobs cannot award twice. A session's tree is captured when it starts.
 
-UI polling stops when the activity stops. A user-started `specialUse` foreground service keeps an ongoing countdown notification during active Pomodoro phases. Android's chronometer updates the countdown without per-second notification posting. Pause, Resume and Stop actions are token-guarded Room transactions; tapping the notification opens Focus. Paused sessions retain a resumable notification without a running service. Reset, skip, preset change and completion remove the active notification. WorkManager remains the persistent completion fallback. No continuous wake lock is held; Doze and OEM restrictions can delay the completion alert, while the saved deadline remains accurate. Auto-start applies while the app is open. Force-stopping an app blocks background execution until it is reopened.
+UI polling stops when the activity stops. A user-started `specialUse` foreground service keeps an ongoing countdown notification during active Pomodoro phases. Android's chronometer updates the countdown without per-second notification posting. Pause, Resume and Stop actions are token-guarded Room transactions; tapping the notification opens Focus. Paused sessions retain their service and a resumable notification without a ticker, polling or wake lock, avoiding races during quick Pause/Resume actions. Reset, skip, preset change and completion remove the active notification. WorkManager remains the persistent completion fallback. No continuous wake lock is held; Doze and OEM restrictions can delay the completion alert, while the saved deadline remains accurate. Auto-start applies while the app is open. Force-stopping an app blocks background execution until it is reopened.
 
 The audio service separately uses a media-playback foreground service while playing recitation. Audio focus, noisy-output handling, media sessions, headset controls and notification lifecycle are provided by Media3. Streaming needs internet; all productivity features remain local and work offline. Uninstalling clears local data. Backup export is JSON; automatic import is not offered in the original web app or this initial Android version.
 
@@ -50,7 +50,7 @@ The audio service separately uses a media-playback foreground service while play
 - `ACCESS_NETWORK_STATE`: Android WorkManager network awareness.
 - `POST_NOTIFICATIONS`: requested on the first timer start, or when enabling completion reminders on Android 13+. Denial leaves the timer usable; Android controls notification visibility.
 - `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MEDIA_PLAYBACK`: ongoing user-requested audio, media notification and lock-screen controls.
-- `FOREGROUND_SERVICE_SPECIAL_USE`: user-started Pomodoro countdown and its controls; the service stops when paused or finished.
+- `FOREGROUND_SERVICE_SPECIAL_USE`: user-started Pomodoro countdown and its controls; the service stops when the session is reset, stopped or finished.
 - `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED`: added by WorkManager to finish short scheduled jobs reliably and restore scheduling after restart. The timer service does not acquire a continuous wake lock.
 - `com.jawadmohammed.quranodoro.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`: AndroidX's app-private signature permission for internal receiver compatibility; it grants no access to personal data.
 
@@ -82,8 +82,8 @@ For a release:
 
 1. Update `versionName` and increment `versionCode` in `app/build.gradle.kts`.
 2. Run all checks and device QA. Commit and push.
-3. Push the matching tag, for example `git tag v1.1.0` and `git push origin v1.1.0`.
-4. The release workflow requires all four secrets, checks version/tag agreement, runs unit tests and lint, builds and verifies the production APK, and publishes `Quranodoro-v1.1.0.apk` plus its SHA-256 checksum.
+3. Push the matching tag, for example `git tag v1.1.1` and `git push origin v1.1.1`.
+4. The release workflow requires all four secrets, checks version/tag agreement, runs unit tests and lint, builds and verifies the production APK, and publishes `Quranodoro-v1.1.1.apk` plus its SHA-256 checksum.
 
 Missing signing secrets fail the workflow before publication. No debug APK is substituted. Ordinary CI uploads a clearly named debug artifact. Any initial testing prerelease is explicitly labeled debug and is not a production release. A production-signed APK cannot update a debug-signed installation; export progress before removing a test installation.
 

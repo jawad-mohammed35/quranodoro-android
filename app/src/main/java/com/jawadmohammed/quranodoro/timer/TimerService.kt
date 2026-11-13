@@ -23,7 +23,9 @@ class TimerService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createChannel()
-        ServiceCompat.startForeground(this, ID, NotificationCompat.Builder(this, CHANNEL)
+        // A subsequent command may arrive after the Room observer already posted
+        // its new state. Never overwrite that notification with the startup placeholder.
+        if (observer == null) ServiceCompat.startForeground(this, ID, NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.notification_timer).setContentTitle("Restoring your session")
             .setSilent(true).setOnlyAlertOnce(true).setOngoing(true).build(),
             if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0)
@@ -55,10 +57,11 @@ class TimerService : Service() {
                         // emission cannot cancel the completion alert/audio cleanup halfway through.
                         finishing = scope.launch { completeSession(this@TimerService, timer.token) }
                     } else {
-                        stopForeground(STOP_FOREGROUND_DETACH)
-                        getSystemService(NotificationManager::class.java).notify(ID, notification(timer, false))
-                        // Paused sessions need no running service. Resume is a notification PendingIntent.
-                        stopSelf()
+                        // A paused session remains controllable in the foreground. No ticker,
+                        // polling or wake lock runs here. Keeping its lifecycle avoids racing
+                        // stopSelf/onDestroy against a quick Resume action on slower devices.
+                        ServiceCompat.startForeground(this@TimerService, ID, notification(timer, false),
+                            if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0)
                     }
                 }
             }

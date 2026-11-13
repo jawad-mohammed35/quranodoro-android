@@ -60,10 +60,10 @@ fun QuranScreen(vm: AppViewModel) {
         Heading("Listen & reflect", "Let the words bring you back to stillness.")
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) {
-                Picker("Reciter", reciters, r, onSelect = { vm.selectAudio(reciter = reciters.indexOf(it)) }, text = { it.name })
+                Picker("Reciter", reciters, r, onSelect = { vm.selectAudio(reciter = reciters.indexOf(it)) }, text = { "${it.name}\n${it.arabic}" })
             }
             Column(Modifier.weight(1f)) {
-                Picker("Surah", surahs, s, onSelect = { vm.selectAudio(surah = it.number) }, text = { "${it.number}. ${it.name}" })
+                Picker("Surah", surahs, s, onSelect = { vm.selectAudio(surah = it.number) }, text = { "${it.number}. ${it.name} — ${it.arabic}" })
             }
         }
         Glass(Modifier.fillMaxWidth()) {
