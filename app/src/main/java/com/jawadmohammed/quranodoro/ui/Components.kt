@@ -208,7 +208,7 @@ fun FrostedBackdrop(layer: androidx.compose.ui.graphics.layer.GraphicsLayer,
 @Composable
 fun GlassDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
     val oled = LocalOled.current
-    val scheme = MaterialTheme.colorScheme
+    val scheme = LocalAppColors.current
     val typography = MaterialTheme.typography
     val shapes = MaterialTheme.shapes
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest) {

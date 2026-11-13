@@ -59,7 +59,10 @@ private val Dark =
         error = Color(0xFFCF9186),
     )
 
-val LocalOled = androidx.compose.runtime.staticCompositionLocalOf { false }
+// Appearance changes at runtime. Tracked locals keep separately composed windows
+// on the current palette even when their parent composition context is retained.
+val LocalOled = androidx.compose.runtime.compositionLocalOf { false }
+val LocalAppColors = androidx.compose.runtime.compositionLocalOf { Light }
 
 private val Oled =
     Dark.copy(
@@ -96,7 +99,7 @@ fun QuranodoroTheme(theme: String, content: @Composable () -> Unit) {
         primaryContainer = animatedTone(target.primaryContainer), onBackground = animatedTone(target.onBackground),
         outlineVariant = animatedTone(target.outlineVariant), onSurfaceVariant = animatedTone(target.onSurfaceVariant),
     )
-    androidx.compose.runtime.CompositionLocalProvider(LocalOled provides (target === Oled)) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalOled provides (target === Oled), LocalAppColors provides colors) {
         MaterialTheme(colorScheme = colors, shapes = Shapes(
             small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp),
             large = RoundedCornerShape(28.dp), extraLarge = RoundedCornerShape(32.dp)), typography = Typography(
