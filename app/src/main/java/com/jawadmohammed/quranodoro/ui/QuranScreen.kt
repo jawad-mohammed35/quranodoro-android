@@ -58,16 +58,24 @@ fun QuranScreen(vm: AppViewModel) {
     val r = reciters[prefs.reciter.coerceIn(reciters.indices)]
     Page {
         Heading("Listen & reflect", "Let the words bring you back to stillness.")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                Picker("Reciter", reciters, r, onSelect = { vm.selectAudio(reciter = reciters.indexOf(it)) }, text = { it.name })
+            }
+            Column(Modifier.weight(1f)) {
+                Picker("Surah", surahs, s, onSelect = { vm.selectAudio(surah = it.number) }, text = { "${it.number}. ${it.name}" })
+            }
+        }
         Glass(Modifier.fillMaxWidth()) {
             QText(
                 "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-                fontSize = 28.sp,
+                fontSize = 23.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
             )
             QText(
                 s.arabic,
-                fontSize = 36.sp,
+                fontSize = 32.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -122,14 +130,9 @@ fun QuranScreen(vm: AppViewModel) {
                 }
             }
         }
-        Section("Your recitation") {
-            Picker(
-                "Reciter",
-                reciters,
-                r,
-                onSelect = { vm.selectAudio(reciter = reciters.indexOf(it)) },
-                text = { "${it.name}\n${it.arabic}" },
-            )
+        var options by remember { mutableStateOf(false) }
+        TextButton(onClick = { options = !options }) { QText(if (options) "Hide audio options" else "Audio options & favorite reciter") }
+        if (options) Section("Listening preferences") {
             TextButton(
                 onClick = {
                     vm.number(
@@ -148,13 +151,6 @@ fun QuranScreen(vm: AppViewModel) {
                 TextButton(onClick = { vm.selectAudio(reciter = prefs.favoriteReciter) }) {
                     QText("Use ${reciters[prefs.favoriteReciter].name}")
                 }
-            Picker(
-                "Surah",
-                surahs,
-                s,
-                onSelect = { vm.selectAudio(surah = it.number) },
-                text = { "${it.number}. ${it.name} — ${it.arabic}" },
-            )
             QText("Volume", style = MaterialTheme.typography.labelLarge)
             Slider(prefs.volume, { vm.volume(it) }, valueRange = 0f..1f)
         }

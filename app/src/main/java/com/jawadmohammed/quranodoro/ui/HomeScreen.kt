@@ -24,6 +24,7 @@ import com.jawadmohammed.quranodoro.AppViewModel
 import com.jawadmohammed.quranodoro.data.*
 import java.time.LocalDate
 import kotlinx.coroutines.delay
+import androidx.lifecycle.repeatOnLifecycle
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -40,8 +41,15 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
     var origin by remember { mutableStateOf(Offset.Zero) }
     var target by remember { mutableStateOf<String?>(null) }
     val order = prefs.order.filter { it !in prefs.hidden }
+    var localToday by remember { mutableStateOf(LocalDate.now()) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) { localToday = LocalDate.now(); delay(1000) }
+        }
+    }
     val today =
-        sessions.filter { localDate(it.completedAt) == LocalDate.now() }.sumOf { it.minutes }
+        sessions.filter { localDate(it.completedAt) == localToday }.sumOf { it.minutes }
     var reminderIndex by remember {
         val date = LocalDate.now()
         mutableStateOf(
@@ -81,21 +89,23 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 ((contentWidth.toPx() - 12.dp.toPx() * (columns - 1)) / columns).toInt().toDp()
             }
         Column(
-            Modifier.fillMaxSize().verticalScroll(scrollState).padding(20.dp),
+            Modifier.fillMaxSize().verticalScroll(scrollState).padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 QText(
-                    LocalDate.now()
+                    localToday
                         .format(
                             java.time.format.DateTimeFormatter.ofPattern(
-                                "EEEE, MMMM d",
+                                "EEEE, MMMM d, yyyy",
                                 java.util.Locale.ENGLISH,
                             ),
                         ),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                QText(hijriDate(localToday, prefs.hijriAdjustment), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary)
                 Heading(
                     "Assalamu Alaikum" + if (prefs.name.isBlank()) "" else ", ${prefs.name}",
                     "Nurture your focus. Nourish your soul.",
@@ -243,12 +253,10 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                                 if (!editing)
                                     when (id) {
                                         "focus" -> {
-                                            QText(
-                                                "$today",
-                                                style = MaterialTheme.typography.displaySmall,
-                                                fontWeight = FontWeight.Light,
-                                            )
-                                            QText("minutes of intention today")
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                QText("$today", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Light)
+                                                QText("minutes of intention today", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                            }
                                             LinearProgressIndicator(
                                                 progress = { (today / 120f).coerceIn(0f, 1f) },
                                                 modifier = Modifier.fillMaxWidth(),
@@ -350,9 +358,9 @@ fun HomeScreen(vm: AppViewModel, navigate: (String) -> Unit) {
             { vm.run { vm.prefs.resetDashboard() } },
         )
     if (add)
-        androidx.compose.ui.window.Dialog(onDismissRequest = { add = false }) {
+        GlassDialog(onDismissRequest = { add = false }) {
             Glass {
-                Heading("Add Widgets")
+                QText("Add Widgets", style = MaterialTheme.typography.titleLarge)
                 if (prefs.hidden.isEmpty()) QText("All widgets are already on your dashboard.")
                 prefs.hidden.forEach { id ->
                     TextButton(onClick = { vm.showPanel(id) }) {

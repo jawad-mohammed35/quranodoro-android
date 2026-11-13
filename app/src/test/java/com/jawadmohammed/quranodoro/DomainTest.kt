@@ -8,6 +8,18 @@ import org.junit.Test
 
 class DomainTest {
     @Test
+    fun hijriCalendarUsesUmmAlQuraAndSupportsLocalAdjustment() {
+        val firstRamadan = LocalDate.of(2024, 3, 11)
+        assertEquals("1 Ramadan 1445 AH", hijriDate(firstRamadan))
+        assertEquals(hijriDate(firstRamadan.plusDays(1)), hijriDate(firstRamadan, 1))
+        assertEquals(hijriDate(firstRamadan.minusDays(2)), hijriDate(firstRamadan, -2))
+        assertEquals(hijriDate(firstRamadan, 2), hijriDate(firstRamadan, 50))
+        val instant = java.time.Instant.parse("2024-03-11T01:00:00Z")
+        assertNotEquals(hijriDate(instant.atZone(ZoneId.of("America/New_York")).toLocalDate()),
+            hijriDate(instant.atZone(ZoneId.of("Asia/Riyadh")).toLocalDate()))
+    }
+
+    @Test
     fun growthMatchesWebAnchors() {
         assertEquals(10, growthPoints(25))
         assertEquals(20, growthPoints(50))

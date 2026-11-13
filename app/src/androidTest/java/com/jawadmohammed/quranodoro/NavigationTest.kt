@@ -22,6 +22,7 @@ class NavigationTest {
             vm.prefs.string("language", "ar")
             vm.prefs.string("theme", "Light")
             vm.prefs.bool("focusAudio", false)
+            vm.prefs.bool("timerPermissionAsked", true)
             vm.prefs.int("reciter", 0)
             vm.prefs.int("surah", 1)
         }
@@ -33,20 +34,20 @@ class NavigationTest {
         val bar = rule.onNodeWithTag("tab-bar")
         bar.performTouchInput {
             down(percentOffset(.1f, .5f))
-            advanceEventTime(800)
+            advanceEventTime(40)
             moveTo(percentOffset(.3f, .5f))
             moveTo(percentOffset(.7f, .5f))
             up()
         }
-        rule.onNodeWithTag("tab-tasbih").assertIsSelected()
-        rule.onNodeWithText("Tap to count").assertIsDisplayed()
+        rule.onNodeWithTag("tab-farm").assertIsSelected()
+        rule.onNodeWithText("Your date farm").assertIsDisplayed()
         bar.performTouchInput {
             down(percentOffset(.7f, .5f))
             advanceEventTime(800)
             moveTo(percentOffset(.9f, .5f))
             cancel()
         }
-        rule.onNodeWithTag("tab-farm").assertIsSelected()
+        rule.onNodeWithTag("tab-tasbih").assertIsSelected()
         rule.onNodeWithTag("tab-focus").performTouchInput { click() }
         rule.activityRule.scenario.recreate()
         rule.onNodeWithTag("tab-focus").assertIsSelected()
@@ -58,6 +59,7 @@ class NavigationTest {
     fun oledRoutesAndPickerUseBlackSurfaces() {
         rule.onNodeWithContentDescription("Settings").performClick()
         rule.onNodeWithText("Language").assertDoesNotExist()
+        rule.onNodeWithText("Appearance").performClick()
         rule.onNodeWithText("Theme").performClick()
         rule.onNodeWithText("OLED Black").performClick()
         rule.waitUntil(5000) { vm.preferences.value.theme == "OLED Black" }
@@ -83,7 +85,7 @@ class NavigationTest {
             )
             screenshot("oled-$name")
         }
-        inspect("settings", "Make it yours")
+        inspect("appearance", "Appearance")
         rule.onNodeWithText("Theme").performClick()
         val dialog = captureDialog()
         Assert.assertEquals(
@@ -91,7 +93,8 @@ class NavigationTest {
             dialog.getPixel(dialog.width / 2, dialog.height / 2),
         )
         rule.onNodeWithText("Close").performClick()
-        rule.onNodeWithText("Meet the developer").performScrollTo().performClick()
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.onNodeWithText("About the Developer").performScrollTo().performClick()
         inspect("developer", "About the Developer")
         rule.onNodeWithContentDescription("Analytics").performClick()
         inspect("analytics", "A little progress, every day")
@@ -270,11 +273,14 @@ class NavigationTest {
     @Test
     fun settingsThemeAndBackNavigation() {
         rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithText("Appearance").performClick()
         rule.onNodeWithText("Theme").performScrollTo().performClick()
         rule.onNodeWithText("Dark").performClick()
         rule.waitUntil(5000) { vm.preferences.value.theme == "Dark" }
         rule.waitForIdle()
         screenshot("settings-dark")
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.onNodeWithText("Make it yours").assertIsDisplayed()
         rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
         rule.onNodeWithText("Assalamu Alaikum").assertIsDisplayed()
         rule.onNodeWithContentDescription("Analytics").performClick()

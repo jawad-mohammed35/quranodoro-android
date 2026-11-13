@@ -4,6 +4,15 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 
 private val Light =
     lightColorScheme(
@@ -21,6 +30,10 @@ private val Light =
         surfaceVariant = Color(0xFFF1EEE6),
         onSurfaceVariant = Color(0xFF626C5D),
         outlineVariant = Color(0xFFE7E3D7),
+        outline = Color(0xFFB2BAAA),
+        surfaceContainerLowest = Color(0xFFFAF8F3), surfaceContainerLow = Color(0xFFF7F5EF),
+        surfaceContainer = Color(0xFFF1F2E9), surfaceContainerHigh = Color(0xFFEFF1E7),
+        surfaceContainerHighest = Color(0xFFE7EDE1),
         error = Color(0xFF9C5549),
     )
 private val Dark =
@@ -39,6 +52,10 @@ private val Dark =
         surfaceVariant = Color(0xFF2F342E),
         onSurfaceVariant = Color(0xFFB1B9AA),
         outlineVariant = Color(0xFF383D37),
+        outline = Color(0xFF7B8B7A),
+        surfaceContainerLowest = Color(0xFF1A1E1A), surfaceContainerLow = Color(0xFF232923),
+        surfaceContainer = Color(0xFF272B26), surfaceContainerHigh = Color(0xFF2F352E),
+        surfaceContainerHighest = Color(0xFF363D34),
         error = Color(0xFFCF9186),
     )
 
@@ -65,14 +82,32 @@ private val Oled =
 
 @Composable
 fun QuranodoroTheme(theme: String, content: @Composable () -> Unit) {
-    val colors =
+    val target =
         when (theme) {
             "OLED Black" -> Oled
             "Dark" -> Dark
             "Light" -> Light
             else -> if (isSystemInDarkTheme()) Dark else Light
         }
-    androidx.compose.runtime.CompositionLocalProvider(LocalOled provides (colors === Oled)) {
-        MaterialTheme(colorScheme = colors, content = content)
+    // OLED changes immediately to black; other palettes ease between their shared tones.
+    val colors = if (target === Oled) target else target.copy(
+        background = animatedTone(target.background), surface = animatedTone(target.surface),
+        primary = animatedTone(target.primary), onSurface = animatedTone(target.onSurface),
+        primaryContainer = animatedTone(target.primaryContainer), onBackground = animatedTone(target.onBackground),
+        outlineVariant = animatedTone(target.outlineVariant), onSurfaceVariant = animatedTone(target.onSurfaceVariant),
+    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalOled provides (target === Oled)) {
+        MaterialTheme(colorScheme = colors, shapes = Shapes(
+            small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp),
+            large = RoundedCornerShape(28.dp), extraLarge = RoundedCornerShape(32.dp)), typography = Typography(
+            headlineMedium = TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold),
+            titleLarge = TextStyle(fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.Medium),
+        ), content = content)
     }
+}
+
+@Composable
+private fun animatedTone(target: Color): Color {
+    val tone by animateColorAsState(target, tween(320), label = "Pastel theme")
+    return tone
 }

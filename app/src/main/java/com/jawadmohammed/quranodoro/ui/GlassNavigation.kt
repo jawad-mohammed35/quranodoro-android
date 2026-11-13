@@ -3,6 +3,10 @@ package com.jawadmohammed.quranodoro.ui
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
@@ -38,9 +42,10 @@ fun GlassNavigation(
 ) {
     val colors = MaterialTheme.colorScheme
     val oled = LocalOled.current
-    val shape = RoundedCornerShape(26.dp)
+    val shape = RoundedCornerShape(32.dp)
     val feedback = LocalHapticFeedback.current
     val activate by rememberUpdatedState(navigate)
+    val currentRoute by rememberUpdatedState(route)
     var finger by remember { mutableStateOf<Float?>(null) }
     var barPosition by remember { mutableStateOf(Offset.Zero) }
     val selected = destinations.indexOfFirst { it.route == route }
@@ -52,14 +57,17 @@ fun GlassNavigation(
             .onGloballyPositioned { barPosition = it.positionInRoot() }
             .shadow(if (oled) 0.dp else 5.dp, shape)
             .clip(shape)
-            .border(1.dp, colors.outlineVariant, shape)
+            .border(.8.dp, Brush.verticalGradient(listOf(if (oled) colors.outlineVariant else Color.White.copy(alpha = .85f), colors.primary.copy(alpha = .22f))), shape)
             .testTag("tab-bar")
             .pointerInput(haptics) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
-                    val held = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+                    // Taps remain child selectables. Horizontal movement claims the gesture
+                    // after touch slop; a vertical exit cancels without changing tabs.
+                    val held = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+                        ?: return@awaitEachGesture
                     val cell = size.width.toFloat() / destinations.size
-                    var last = -1
+                    var last = destinations.indexOfFirst { it.route == currentRoute }
                     fun track(position: Offset) {
                         if (position.y !in 0f..size.height.toFloat()) return
                         val x = (position.x / cell).coerceIn(.5f, destinations.size - .5f)
@@ -80,7 +88,7 @@ fun GlassNavigation(
                                     androidx.compose.ui.input.pointer.PointerEventPass.Initial,
                                 )
                             val change = event.changes.firstOrNull { it.id == held.id } ?: break
-                            if (change.isConsumed || event.changes.count { it.pressed } > 1) break
+                            if (event.changes.count { it.pressed } > 1 || change.position.y !in 0f..size.height.toFloat()) break
                             if (change.pressed) track(change.position)
                             change.consume()
                         } while (change.pressed)
@@ -94,7 +102,7 @@ fun GlassNavigation(
             Spacer(
                 Modifier.matchParentSize().blur(12.dp).drawBehind {
                     // Sample the page edge while keeping the interactive scroll viewport clear.
-                    translate(pagePosition.x - barPosition.x, size.height - backdrop.size.height) {
+                    translate(pagePosition.x - barPosition.x, pagePosition.y - barPosition.y) {
                         drawLayer(backdrop)
                     }
                 },
@@ -102,24 +110,29 @@ fun GlassNavigation(
         }
         Spacer(
             Modifier.matchParentSize()
-                .background(if (oled) Color.Black else colors.surface.copy(alpha = .86f)),
+                .background(if (oled) Color.Black else colors.surface.copy(alpha = if (backdrop == null) .96f else .62f)),
         )
         val cell = maxWidth / destinations.size
         val target = finger ?: (selected + .5f)
         val center by
             animateFloatAsState(
                 target,
-                tween(if (finger == null) 180 else 65),
+                spring(dampingRatio = .82f, stiffness = if (finger == null) 520f else 1400f),
                 label = "Tab position",
             )
+        val lensHeight by animateDpAsState(if (finger == null) 52.dp else 58.dp, spring(dampingRatio = .75f), label = "Glass lens")
         if (selected >= 0 || finger != null) {
             Spacer(
                 Modifier.align(Alignment.CenterStart)
                     .offset(x = cell * (center - .5f))
                     .width(cell)
-                    .height(44.dp)
+                    .height(lensHeight)
                     .padding(horizontal = 3.dp)
-                    .background(colors.primary.copy(alpha = if (oled) .08f else .14f), shape)
+                    .background(Brush.linearGradient(listOf(
+                        colors.primary.copy(alpha = if (oled) .05f else .22f),
+                        if (oled) Color.Black else colors.surface.copy(alpha = .55f),
+                        colors.primary.copy(alpha = if (oled) .04f else .12f),
+                    )), shape)
                     .border(1.dp, colors.primary.copy(alpha = .32f), shape),
             )
         }
@@ -129,16 +142,19 @@ fun GlassNavigation(
         ) {
             destinations.forEachIndexed { index, destination ->
                 val active = selected == index
+                val interaction = remember { MutableInteractionSource() }
+                val pressed by interaction.collectIsPressedAsState()
                 val scale by
                     animateFloatAsState(
-                        if (finger?.toInt() == index) 1.15f else 1f,
+                        if (finger?.toInt() == index || pressed) 1.20f else if (active) 1.06f else 1f,
+                        animationSpec = spring(dampingRatio = .65f, stiffness = 650f),
                         label = "Icon scale",
                     )
                 Column(
                     Modifier.weight(1f)
                         .testTag("tab-${destination.route}")
-                        .selectable(active, role = Role.Tab) { activate(destination) }
-                        .heightIn(min = 58.dp)
+                        .selectable(selected = active, interactionSource = interaction, indication = null, role = Role.Tab, onClick = { activate(destination) })
+                        .heightIn(min = 66.dp)
                         .padding(vertical = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -147,7 +163,7 @@ fun GlassNavigation(
                         Icon(
                             if (filled) destination.active else destination.inactive,
                             null,
-                            Modifier.size(22.dp).scale(scale),
+                            Modifier.size(if (destination.route in listOf("focus", "farm")) 26.dp else 22.dp).scale(scale),
                             tint = if (filled) colors.primary else colors.onSurfaceVariant,
                         )
                     }

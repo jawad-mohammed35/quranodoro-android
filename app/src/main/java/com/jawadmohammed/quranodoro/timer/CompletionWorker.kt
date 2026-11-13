@@ -61,7 +61,7 @@ fun notifyCompletion(context: Context, phase: String) {
         PendingIntent.getActivity(
             context,
             0,
-            Intent(context, MainActivity::class.java),
+            Intent(context, MainActivity::class.java).putExtra("route", "focus").addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
     manager.notify(
@@ -79,10 +79,15 @@ fun notifyCompletion(context: Context, phase: String) {
 class CompletionWorker(context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        val app = applicationContext as QuranodoroApp
+        completeSession(applicationContext, inputData.getString("token") ?: return Result.failure())
+        return Result.success()
+    }
+}
+
+suspend fun completeSession(applicationContext: Context, token: String) {
+        val app = applicationContext.applicationContext as QuranodoroApp
         val dao = app.database.dao()
-        val t = dao.timer() ?: return Result.success()
-        val token = inputData.getString("token") ?: return Result.failure()
+        val t = dao.timer() ?: return
         val completed =
             dao.complete(
                 token,
@@ -92,7 +97,13 @@ class CompletionWorker(context: Context, params: WorkerParameters) :
             )
         val preferences = app.preferences.flow.first()
         if (completed && preferences.notifications) notifyCompletion(applicationContext, t.phase)
-        if (completed && preferences.focusAudio && t.phase == "Focus")
+        if (completed && preferences.focusAudio && t.phase == "Focus") setFocusPlayback(app, false)
+}
+
+/** Finite cleanup survives a service stopping after its Room state changes. */
+suspend fun setFocusPlayback(app: Context, play: Boolean) {
+    kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+        kotlinx.coroutines.withTimeoutOrNull(5000) {
             withContext(Dispatchers.Main) {
                 val future =
                     MediaController.Builder(
@@ -113,11 +124,11 @@ class CompletionWorker(context: Context, params: WorkerParameters) :
                                 ContextCompat.getMainExecutor(app),
                             )
                         }
-                    controller?.pause()
+                    if (play) controller?.play() else controller?.pause()
                 } finally {
                     MediaController.releaseFuture(future)
                 }
             }
-        return Result.success()
+}
     }
 }

@@ -10,6 +10,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jawadmohammed.quranodoro.ui.Quranodoro
 
 class MainActivity : ComponentActivity() {
+    val requestedRoute = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        requestedRoute.value = intent.getStringExtra("route")
+    }
     private val model: AppViewModel by viewModels()
 
     override fun attachBaseContext(newBase: android.content.Context) {
@@ -21,6 +26,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) requestedRoute.value = intent.getStringExtra("route")
+        intent.removeExtra("route")
         splash.setKeepOnScreenCondition { !model.initialized.value }
         if (resources.configuration.smallestScreenWidthDp < 600)
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT

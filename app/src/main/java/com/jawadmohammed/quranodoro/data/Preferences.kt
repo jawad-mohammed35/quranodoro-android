@@ -22,6 +22,8 @@ data class UserPreferences(
     val order: List<String> = panels.keys.toList(),
     val hidden: Set<String> = emptySet(),
     val wide: Set<String> = setOf("focus", "week", "reciter", "inspiration"),
+    val timerPermissionAsked: Boolean = false,
+    val hijriAdjustment: Int = 0,
     val customPresets: String = "",
 )
 
@@ -49,6 +51,8 @@ class Preferences(context: Context) {
                 wide =
                     p[stringSetPreferencesKey("wide")]
                         ?: setOf("focus", "week", "reciter", "inspiration"),
+                timerPermissionAsked = p[booleanPreferencesKey("timerPermissionAsked")] ?: false,
+                hijriAdjustment = (p[intPreferencesKey("hijriAdjustment")] ?: 0).coerceIn(-2, 2),
                 customPresets = p[stringPreferencesKey("customPresets")] ?: "",
             )
         }

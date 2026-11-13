@@ -30,6 +30,24 @@ class PersistenceTest {
     }
 
     @Test
+    fun notificationActionsRejectStaleTokensAndSerializeWithCompletion() = runBlocking {
+        val dao = db.dao()
+        val t = TimerState(token = "active", running = true, endWall = 10000, endElapsed = 10000, boot = 1)
+        dao.save(t)
+        assertNull(dao.notificationAction("old", "stop", 1000, 1000, 1))
+        val paused = dao.notificationAction("active", "pause", 1000, 1000, 1)!!
+        assertFalse(paused.running)
+        assertEquals(9000L, paused.remainingMs)
+        val resumed = dao.notificationAction("active", "resume", 2000, 2000, 1)!!
+        assertTrue(resumed.running)
+        assertEquals(11000L, resumed.endElapsed)
+        dao.notificationAction("active", "stop", 3000, 3000, 1)
+        assertNull(dao.notificationAction("active", "resume", 4000, 4000, 1))
+        assertFalse(dao.timer()!!.running)
+        assertTrue(dao.sessions().first().isEmpty())
+    }
+
+    @Test
     fun rapidDhikrTapsAreNotLostAndPresetKeepsCount() = runBlocking {
         val dao = db.dao()
         dao.save(TasbihState())

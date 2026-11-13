@@ -1,30 +1,43 @@
 package com.jawadmohammed.quranodoro.ui
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jawadmohammed.quranodoro.AppViewModel
 import com.jawadmohammed.quranodoro.data.localDate
 import java.time.LocalDate
-
 @Composable
 fun TasbihScreen(vm: AppViewModel) {
     val s by vm.tasbih.collectAsStateWithLifecycle()
     val p by vm.preferences.collectAsStateWithLifecycle()
     val sessions by vm.dhikr.collectAsStateWithLifecycle()
     var reset by remember { mutableStateOf(false) }
-    var custom by remember { mutableStateOf("") }
-    var phrase by remember(s.phrase) { mutableStateOf(s.phrase) }
-    val haptic = LocalHapticFeedback.current
+    var custom by remember { mutableStateOf(false) }
+    val view = LocalView.current
+    val touch = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val pressed by touch.collectIsPressedAsState()
+    val counterScale by animateFloatAsState(if (pressed) .96f else 1f,
+        androidx.compose.animation.core.spring(dampingRatio = .65f), label = "Tasbih touch")
     val progress by
         animateFloatAsState(
             (s.count.toFloat() / s.target).coerceIn(0f, 1f),
@@ -60,10 +73,10 @@ fun TasbihScreen(vm: AppViewModel) {
                     )
                     Surface(
                         onClick = {
-                            if (p.haptics)
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            if (p.haptics) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                             vm.increment()
                         },
+                        interactionSource = touch,
                         shape = CircleShape,
                         border =
                             if (LocalOled.current)
@@ -73,7 +86,10 @@ fun TasbihScreen(vm: AppViewModel) {
                                 )
                             else null,
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.fillMaxSize().padding(18.dp),
+                        modifier = Modifier.fillMaxSize().padding(18.dp).graphicsLayer { scaleX = counterScale; scaleY = counterScale }.semantics {
+                            contentDescription = "Tasbih counter"
+                            stateDescription = "${s.count} of ${s.target}"
+                        },
                     ) {
                         Column(
                             Modifier.padding(16.dp),
@@ -106,41 +122,15 @@ fun TasbihScreen(vm: AppViewModel) {
                     )
                 }
             }
-            OutlinedTextField(
-                custom,
-                { custom = it.filter(Char::isDigit).take(4) },
-                label = { QText("Custom target (1–9999)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions =
-                    androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                    ),
-                trailingIcon = {
-                    TextButton(
-                        enabled = (custom.toIntOrNull() ?: 0) > 0,
-                        onClick = {
-                            vm.target(custom.toInt())
-                            custom = ""
-                        },
-                    ) {
-                        QText("Set")
-                    }
-                },
-            )
+            OutlinedButton(onClick = { custom = true }, modifier = Modifier.fillMaxWidth()) {
+                QText("Custom target")
+            }
             TextButton(onClick = { reset = true }, modifier = Modifier.fillMaxWidth()) {
                 QText("Reset counter")
             }
         }
         Section("Your practice") {
             Toggle("Touch feedback", value = p.haptics, onChange = { vm.bool("haptics", it) })
-            OutlinedTextField(
-                phrase,
-                { phrase = it.take(160) },
-                label = { QText("Custom dhikr") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            TextButton(onClick = { vm.phrase(phrase) }) { QText("Use custom dhikr") }
             QText(
                 "${sessions.count{localDate(it.completedAt)==LocalDate.now()}} completed today · ${sessions.size} all time",
                 style = MaterialTheme.typography.bodyMedium,
@@ -157,6 +147,7 @@ fun TasbihScreen(vm: AppViewModel) {
             }
         }
     }
+    if (custom) TargetDialog(s.target, { custom = false }) { vm.target(it); custom = false }
     if (reset)
         Confirm(
             "Begin again?",
@@ -164,4 +155,32 @@ fun TasbihScreen(vm: AppViewModel) {
             { reset = false },
             vm::resetTasbih,
         )
+}
+@Composable
+private fun TargetDialog(target: Int, dismiss: () -> Unit, save: (Int) -> Unit) {
+    var input by remember { mutableStateOf(target.toString()) }
+    val focus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val valid = input.toIntOrNull()?.let { it in 1..9999 } == true
+    fun close() { keyboard?.hide(); dismiss() }
+    fun submit() { if (valid) { keyboard?.hide(); save(input.toInt()) } }
+    GlassDialog(onDismissRequest = ::close) {
+        Glass(Modifier.imePadding().heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
+            QText("Your target", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            QText("Choose 1–9,999. Your current count stays with you.", style = MaterialTheme.typography.bodyMedium)
+            OutlinedTextField(
+                input, { input = it.filter { c -> c in '0'..'9' }.take(5) },
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                label = { QText("Target count") }, singleLine = true, isError = !valid,
+                supportingText = { if (!valid) QText("Enter a number from 1 to 9,999") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = ::close) { QText("Cancel") }
+                Button(enabled = valid, onClick = ::submit) { QText("Save") }
+            }
+        }
+        LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
+    }
 }

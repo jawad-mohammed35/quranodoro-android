@@ -177,6 +177,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             )
         dao.save(next)
         schedule(app, next.token, next.remainingMs)
+        TimerService.start(app)
         if (preferences.value.focusAudio && next.phase == "Focus") play()
     }
 
@@ -200,6 +201,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 else dao.save(t.copy(running = false, remainingMs = rem))
                 cancelCompletion(app)
+                TimerService.start(app)
                 if (preferences.value.focusAudio) controller?.pause()
             } else startInternal()
         }
@@ -219,6 +221,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 ),
             )
             cancelCompletion(app)
+            TimerService.clear(app)
             if (preferences.value.focusAudio) controller?.pause()
         }
     }
@@ -241,6 +244,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 ),
             )
             cancelCompletion(app)
+            TimerService.clear(app)
             if (preferences.value.focusAudio) controller?.pause()
         }
     }
@@ -248,6 +252,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun selectPreset(p: Preset) = run {
         timerMutex.withLock {
             cancelCompletion(app)
+            TimerService.clear(app)
             dao.save(
                 TimerState(
                     presetName = p.name,

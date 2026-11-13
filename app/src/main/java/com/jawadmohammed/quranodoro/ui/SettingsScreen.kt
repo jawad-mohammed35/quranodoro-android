@@ -1,11 +1,16 @@
 package com.jawadmohammed.quranodoro.ui
-
 import android.Manifest
 import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -14,9 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jawadmohammed.quranodoro.AppViewModel
 import java.time.LocalDate
 import kotlinx.coroutines.launch
-
 @Composable
-fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
+fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit, section: String? = null) {
     val p by vm.preferences.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -49,8 +53,21 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 }
         }
     Page {
-        Heading("Make it yours", "Preferences are saved automatically on this device.")
-        Section("Appearance") {
+        if (section == null) {
+            Heading("Make it yours", "A quieter app, shaped around you.")
+            Glass(Modifier.fillMaxWidth()) {
+                SettingsRow("Appearance", "Theme, personal details & Hijri date", Icons.Outlined.Palette) { navigate("settings/appearance") }
+                SettingsRow("Focus & Notifications", "Your sessions, rhythm & reminders", Icons.Outlined.Timer) { navigate("settings/focus") }
+                SettingsRow("Tasbih", "Touch feedback & daily practice", Icons.Outlined.Spa) { navigate("settings/tasbih") }
+                SettingsRow("Quran & Audio", "Recitation & background listening", Icons.Outlined.Headphones) { navigate("settings/audio") }
+                SettingsRow("Local Progress", "Your saved progress & backup", Icons.Outlined.Storage) { navigate("settings/progress") }
+            }
+            Glass(Modifier.fillMaxWidth()) {
+                SettingsRow("About Quranodoro", "Version & project information", Icons.Outlined.Info) { navigate("settings/about") }
+                SettingsRow("About the Developer", "Jawad Mohammed", Icons.Outlined.Person) { navigate("about") }
+            }
+        }
+        if (section == "appearance") Section("Appearance") {
             Picker(
                 "Theme",
                 listOf("Light", "Dark", "OLED Black", "System"),
@@ -58,6 +75,10 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 onSelect = { vm.string("theme", it) },
                 text = { if (it == "System") "System Default" else it },
             )
+            Picker("Hijri date adjustment", (-2..2).toList(), p.hijriAdjustment,
+                onSelect = { vm.number("hijriAdjustment", it) },
+                text = { if (it == 0) "Calculated date · no adjustment" else "%+d day(s)".format(it) })
+            QText("Offline Umm al-Qura calendar. Adjust for your local moon sighting.", style = MaterialTheme.typography.bodySmall)
             var name by remember(p.name) { mutableStateOf(p.name) }
             OutlinedTextField(
                 name,
@@ -70,7 +91,7 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        Section("Pomodoro") {
+        if (section == "focus") Section("Pomodoro") {
             Toggle(
                 "Auto-start next phase",
                 "While the app is open; background completion waits for your return",
@@ -88,10 +109,10 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
             )
         }
-        Section("Notifications") {
+        if (section == "focus") Section("Notifications") {
             Toggle(
                 "Session completion reminders",
-                "Android may delay reminders in battery saving mode",
+                "Ongoing countdowns appear when a timer starts; this enables completion alerts",
                 p.notifications,
             ) { enabled ->
                 if (enabled && Build.VERSION.SDK_INT >= 33)
@@ -112,20 +133,20 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 QText("Android notification settings")
             }
         }
-        Section("Quran audio") {
+        if (section == "audio") Section("Quran audio") {
             QText(
                 "Your reciter, Surah, volume and favorites are remembered. Playback supports media notifications, headset controls and screen locking.",
             )
             TextButton(onClick = { navigate("quran") }) { QText("Recitation preferences") }
         }
-        Section("Tasbih") {
+        if (section == "tasbih") Section("Tasbih") {
             Toggle(
                 "Subtle haptic feedback",
                 value = p.haptics,
                 onChange = { vm.bool("haptics", it) },
             )
         }
-        Section("Your local progress") {
+        if (section == "progress") Section("Your local progress") {
             QText(
                 "Progress stays on this device. No account, ads, analytics or trackers. Uninstalling the app removes its data.",
             )
@@ -140,7 +161,7 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
             )
         }
         status?.let { QText(it, color = MaterialTheme.colorScheme.primary) }
-        Section("About Quranodoro") {
+        if (section == "about") Section("About Quranodoro") {
             QText(
                 "A peaceful Islamic productivity companion. Native Android edition ${com.jawadmohammed.quranodoro.BuildConfig.VERSION_NAME} (${com.jawadmohammed.quranodoro.BuildConfig.VERSION_CODE}).",
             )
@@ -151,19 +172,17 @@ fun SettingsScreen(vm: AppViewModel, navigate: (String) -> Unit) {
                 "https://github.com/jawad-mohammed35/quranodoro-android",
             )
         }
-        Section("About the Developer") {
+        if (section == "about") Section("About the Developer") {
             QText("Created by Jawad Mohammed")
             TextButton(onClick = { navigate("about") }) { QText("Meet the developer") }
         }
     }
 }
-
 @Composable
 fun LinkButton(label: String, url: String) {
     val uri = androidx.compose.ui.platform.LocalUriHandler.current
     TextButton(onClick = { runCatching { uri.openUri(url) } }) { QText(label) }
 }
-
 @Composable
 fun AboutScreen() {
     Page {
@@ -181,5 +200,17 @@ fun AboutScreen() {
             LinkButton("LinkedIn", "https://www.linkedin.com/in/jawad-mohammed01/")
             LinkButton("jmoha027@fiu.edu", "mailto:jmoha027@fiu.edu")
         }
+    }
+}
+@Composable
+private fun SettingsRow(title: String, subtitle: String, icon: ImageVector, action: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = action).padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            QText(title, style = MaterialTheme.typography.titleMedium)
+            QText(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Icon(Icons.Outlined.ChevronRight, null, modifier = Modifier.size(20.dp))
     }
 }

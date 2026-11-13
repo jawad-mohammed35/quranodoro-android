@@ -1,16 +1,16 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-
 package com.jawadmohammed.quranodoro.ui
-
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -25,28 +25,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.jawadmohammed.quranodoro.AppViewModel
-
 data class Destination(
     val route: String,
     val title: String,
     val active: ImageVector,
     val inactive: ImageVector,
 )
-
-val destinations =
-    listOf(
-        Destination("home", "Home", Icons.Filled.Home, Icons.Outlined.Home),
-        Destination("focus", "Focus", Icons.Filled.Timer, Icons.Outlined.Timer),
-        Destination("quran", "Quran", Icons.Filled.Book, Icons.Outlined.Book),
-        Destination(
-            "tasbih",
-            "Tasbih",
-            Icons.Filled.Spa,
-            Icons.Outlined.Spa,
-        ),
-        Destination("farm", "Farm", Icons.Filled.Park, Icons.Outlined.Park),
-    )
-
+val destinations = listOf(
+    Destination("home", "Home", Icons.Filled.Home, Icons.Outlined.Home),
+    Destination("quran", "Quran", Icons.Filled.Book, Icons.Outlined.Book),
+    Destination("focus", "Focus", Icons.Filled.Timer, Icons.Outlined.Timer),
+    Destination("farm", "Farm", Icons.Filled.Park, Icons.Outlined.Park),
+    Destination("tasbih", "Tasbih", Icons.Filled.Spa, Icons.Outlined.Spa),
+)
 @Composable
 fun Quranodoro(vm: AppViewModel = viewModel()) {
     val prefs by vm.preferences.collectAsStateWithLifecycle()
@@ -68,7 +59,8 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
     QuranodoroTheme(prefs.theme) {
         val pageLayer = rememberGraphicsLayer()
         var pagePosition by remember { mutableStateOf(Offset.Zero) }
-        val blur = !oled && android.os.Build.VERSION.SDK_INT >= 31
+        val blur = !oled && android.os.Build.VERSION.SDK_INT >= 31 &&
+            !(context.getSystemService(android.app.ActivityManager::class.java)?.isLowRamDevice ?: false)
         val nav = rememberNavController()
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route ?: "home"
@@ -79,27 +71,40 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
             nav.navigate(page) { launchSingleTop = true }
             nav.currentBackStackEntry?.savedStateHandle?.set("parentTab", selectedTab)
         }
+        val requested by (context as com.jawadmohammed.quranodoro.MainActivity).requestedRoute.collectAsState()
+        LaunchedEffect(requested) {
+            if (requested == "focus") {
+                nav.navigate("focus") { launchSingleTop = true; popUpTo(nav.graph.findStartDestination().id) { saveState = true }; restoreState = true }
+                context.requestedRoute.value = null
+            }
+        }
         val playing by vm.playing.collectAsStateWithLifecycle()
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
+                Box(Modifier.padding(horizontal = 12.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))) {
+                if (blur) FrostedBackdrop(pageLayer, pagePosition, Modifier.matchParentSize())
                 TopAppBar(
+                    modifier = Modifier.glassSurface(androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
                     title = {
-                        QText("Quranodoro", style = MaterialTheme.typography.titleLarge)
+                        Column {
+                            QText(if (route.startsWith("settings")) "Settings" else "Quranodoro", style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            if (androidx.compose.ui.platform.LocalDensity.current.fontScale < 1.4f) QText("FOCUS · REFLECT · GROW", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        }
                     },
                     navigationIcon = {
                         if (route !in destinations.map { it.route })
                             IconButton(onClick = { nav.popBackStack() }) {
-                                Icon(Icons.Filled.ArrowBack, "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                             }
                     },
                     actions = {
-                        IconButton(
+                        if (route != "analytics") IconButton(
                             onClick = { openPage("analytics") },
                         ) {
                             Icon(Icons.Outlined.Insights, "Analytics")
                         }
-                        IconButton(
+                        if (!route.startsWith("settings")) IconButton(
                             onClick = { openPage("settings") },
                         ) {
                             Icon(Icons.Outlined.Settings, "Settings")
@@ -108,9 +113,10 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
                     colors =
                         TopAppBarDefaults.topAppBarColors(
                             containerColor =
-                                MaterialTheme.colorScheme.background.copy(alpha = .95f),
+                                androidx.compose.ui.graphics.Color.Transparent,
                         ),
                 )
+                }
             },
             bottomBar = {
                 Column(
@@ -167,7 +173,6 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
         ) { insets ->
             Box(
                 Modifier.fillMaxSize()
-                    .padding(insets)
                     .onGloballyPositioned { pagePosition = it.positionInRoot() }
                     .then(
                         if (blur)
@@ -178,10 +183,12 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
                         else Modifier,
                     )
                     .background(
-                        Brush.verticalGradient(
+                        Brush.linearGradient(
                             listOf(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = .28f),
                                 MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (oled) 0f else .50f),
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = if (oled) 0f else .28f),
                             ),
                         ),
                     ),
@@ -189,7 +196,9 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
                 NavHost(
                     navController = nav,
                     startDestination = "home",
-                    modifier = Modifier.fillMaxSize(),
+                    enterTransition = { androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180)) + androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(220)) { it / 18 } },
+                    exitTransition = { androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) },
+                    modifier = Modifier.fillMaxSize().padding(top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding()),
                 ) {
                     composable("home") {
                         HomeScreen(vm) { nav.navigate(it) { launchSingleTop = true } }
@@ -200,6 +209,9 @@ fun Quranodoro(vm: AppViewModel = viewModel()) {
                     composable("farm") { FarmScreen(vm) { openPage("about-farm") } }
                     composable("analytics") { AnalyticsScreen(vm) }
                     composable("settings") { SettingsScreen(vm, ::openPage) }
+                    listOf("appearance", "focus", "tasbih", "audio", "progress", "about").forEach { section ->
+                        composable("settings/$section") { SettingsScreen(vm, ::openPage, section) }
+                    }
                     composable("about") { AboutScreen() }
                     composable("about-farm") { AboutFarmScreen() }
                 }

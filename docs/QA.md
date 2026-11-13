@@ -1,5 +1,27 @@
 # QA record
 
+## Version 1.1.0 (November 13, 2026)
+
+Executed locally on the Android 15 / API 35 emulator:
+
+- 11 domain unit tests passed, including a known Umm al-Qura Ramadan date, day adjustment bounds and dates across timezones.
+- 25 instrumentation tests passed with real network audio enabled. Coverage includes all primary routes, filled active-tab semantics, horizontal glide/cancellation, Back/recreation, OLED pixel sampling, pickers/confirmations, dashboard drag/hide/resize/reset, concurrent Tasbih increments, custom target validation and count preservation, Settings subpages, Hijri preference persistence, session/reward idempotency and stale notification actions.
+- Ongoing timer notification posted with a system countdown chronometer; Pause/Resume/Stop, return-to-Focus, background/locked-screen elapsed deadlines and background session completion/removal/reminder delivery passed.
+- Actual streamed MP3 playback, background/screen-off progress, pause, seek and media selection passed. This is an emulator audio test, not physical-device speaker/Bluetooth verification.
+- A separate compact 720 × 1600 / 320dpi configuration (360dp wide) at font scale 1.6 passed the important-action/confirmation/custom-target checks in Light, Dark and OLED. Default testing used 1080 × 2400 / 420dpi (411dp) at font scale 1.0. The emulator settings were restored afterward.
+- Debug and release lint completed without errors; unit tests and release assembly passed. Local release assembly is unsigned when signing environment variables are absent; only the certificate-verified GitHub Actions APK is published.
+- Screenshots were visually reviewed for the main screens and large-font Focus/target layouts. Full-window target captures verified numeric keyboard placement below the input and actions. Screenshots are under `docs/screenshots`.
+
+Testing found and fixed controls obscured by the dock, notification intent recreation, and a service-context crash in background completion. The completion test now exercises the service/background path directly. Room entities/schema version and existing preference keys were preserved.
+
+Release certificate and signed upgrade checks are recorded after the GitHub release is built. This local QA does not claim physical-device testing, comprehensive TalkBack testing, leak profiling, frame-time benchmarking, or long-duration OEM/Doze behavior. System window blur depends on OS/device support; hardware Compose blur has an older-Android/low-RAM fallback, and OLED intentionally uses black surfaces. Haptic delivery uses Android's view feedback API and respects the preference/system setting; the feel of vibration still needs a physical phone.
+
+Reproduce the complete local network-enabled suite:
+
+```sh
+./gradlew testDebugUnitTest lintDebug lintRelease assembleRelease connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.networkAudio=true
+```
+
 ## Version 1.0.1
 
 The Android 15 emulator passed all 19 instrumentation tests at each of three phone configurations with gesture navigation enabled:

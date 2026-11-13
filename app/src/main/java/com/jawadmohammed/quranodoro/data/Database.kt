@@ -94,6 +94,23 @@ interface QuranDao {
 
     @Insert suspend fun save(session: DhikrSession)
 
+    /** Notification commands are serialized with completion and guarded against stale sessions. */
+    @Transaction
+    suspend fun notificationAction(token: String, action: String, wall: Long, elapsed: Long, boot: Int): TimerState? {
+        val t = timer() ?: return null
+        if (t.token != token) return null
+        val left = remaining(t, wall, elapsed, boot)
+        if (t.running && left == 0L) { complete(token, wall, elapsed, boot); return null }
+        val next = when (action) {
+            "pause" -> if (t.running) t.copy(running = false, remainingMs = left) else return null
+            "resume" -> if (!t.running) t.copy(running = true, endWall = wall + left, endElapsed = elapsed + left, boot = boot) else return null
+            "stop" -> t.copy(token = UUID.randomUUID().toString(), running = false, remainingMs = t.durationMs, endWall = 0, endElapsed = 0, treeId = null)
+            else -> return null
+        }
+        save(next)
+        return next
+    }
+
     @Transaction
     suspend fun setTarget(target: Int) {
         val s = tasbih() ?: TasbihState()

@@ -6,18 +6,20 @@ Initial testing build: [Quranodoro v1.0.0-debug.1](https://github.com/jawad-moha
 
 ## Features
 
-- Pastel sage and olive palette, warm light theme, charcoal dark and true-black OLED themes, system appearance, and a floating navigation bar with tap and hold-to-slide controls.
+- Pastel sage and olive palette, warm light theme, charcoal dark and true-black OLED themes, system appearance, and a floating navigation bar with tap and horizontal glide controls, a spring-animated glass lens and emphasized Focus/Farm tabs.
 - Home dashboard: nine widgets, long-press drag handles, accessible move controls, compact/full-width sizing, hide/add widgets and confirmed reset. Layout saves automatically.
 - Pomodoro: five original presets, saved custom presets, focus/short/long breaks, pause/resume/reset/skip, cycle tracking, history and growth rewards.
 - Quran: all 12 web reciters and 114 Surahs, search, favorites, volume, seeking, previous/next, loading/retry states. Media3 service supports background streaming, media notifications and external media controls.
-- Tasbih: dhikr selection, custom phrases, 33/99/100 and custom targets, optional touch feedback, completion history. Switching targets preserves the count.
+- Tasbih: preset dhikr selection, 33/99/100 and custom targets, optional touch feedback, completion history. Switching targets preserves the count.
 - Date Farm: six varieties, seven stages, original growth calculations, active-tree selection, persistent orchard and shaded native palm illustrations.
 - Analytics: weekly focus, 12 monthly summaries, 30-day activity history, current streak, average duration, session history and dhikr/farm totals.
-- Settings, developer information and links, local progress backup export. English interface with Arabic Quran and dhikr content.
+- Settings overview with dedicated Appearance, Focus & Notifications, Tasbih, Quran & Audio, Local Progress and About pages; developer links and local JSON backup export.
+- Offline Umm al-Qura Hijri date on Home, based on local time with a configurable ±2-day moon-sighting adjustment.
+- Shared frosted cards and dialogs, refined type and animated transitions. Hardware backdrop blur on Android 12+ with a low-RAM fallback; true-black OLED surfaces. English interface with Arabic Quran and dhikr content.
 
 ## Open in Android Studio
 
-Requires Android Studio supporting AGP 9.3, JDK 17, SDK platform 37.0 and Build Tools 36.0.0. Minimum runtime Android 8.0 / API 26. Application ID `com.jawadmohammed.quranodoro`, version `1.0.1` / code `2`.
+Requires Android Studio supporting AGP 9.3, JDK 17, SDK platform 37.0 and Build Tools 36.0.0. Minimum runtime Android 8.0 / API 26. Application ID `com.jawadmohammed.quranodoro`, version `1.1.0` / code `3`.
 
 1. Clone this repository and open its root directory in Android Studio.
 2. Install SDK Platform 37.0 and Build Tools 36.0.0 in SDK Manager. Accept the SDK license.
@@ -38,17 +40,18 @@ Room schema version 1 stores timer state, focus sessions, trees, Tasbih progress
 
 The timer stores both monotonic and wall-clock deadlines plus the device boot count. The monotonic deadline wins within a boot, with wall-clock fallback after reboot. Completion and farm rewards run in a single Room transaction keyed by a session UUID, so reopening and competing completion jobs cannot award twice. A session's tree is captured when it starts.
 
-UI polling stops when the activity stops. WorkManager schedules a single completion job without a continuously running timer service. Android can delay its notification in Doze/battery saver. The displayed time reconciles when the app returns. Auto-start runs while the app is active; unattended phases are not fabricated. Force-stopping an app blocks its background work until Android allows it again or the user reopens it.
+UI polling stops when the activity stops. A user-started `specialUse` foreground service keeps an ongoing countdown notification during active Pomodoro phases. Android's chronometer updates the countdown without per-second notification posting. Pause, Resume and Stop actions are token-guarded Room transactions; tapping the notification opens Focus. Paused sessions retain a resumable notification without a running service. Reset, skip, preset change and completion remove the active notification. WorkManager remains the persistent completion fallback. No continuous wake lock is held; Doze and OEM restrictions can delay the completion alert, while the saved deadline remains accurate. Auto-start applies while the app is open. Force-stopping an app blocks background execution until it is reopened.
 
-Only the audio service uses a foreground service, while playing media. Audio focus, noisy-output handling, media sessions, headset controls and notification lifecycle are provided by Media3. Streaming needs internet; all productivity features remain local and work offline. Uninstalling clears local data. Backup export is JSON; automatic import is not offered in the original web app or this initial Android version.
+The audio service separately uses a media-playback foreground service while playing recitation. Audio focus, noisy-output handling, media sessions, headset controls and notification lifecycle are provided by Media3. Streaming needs internet; all productivity features remain local and work offline. Uninstalling clears local data. Backup export is JSON; automatic import is not offered in the original web app or this initial Android version.
 
 ## Permissions and privacy
 
 - `INTERNET`: HTTPS Quran audio streaming and provider responses.
 - `ACCESS_NETWORK_STATE`: Android WorkManager network awareness.
-- `POST_NOTIFICATIONS`: requested only when enabling session reminders on Android 13+.
+- `POST_NOTIFICATIONS`: requested on the first timer start, or when enabling completion reminders on Android 13+. Denial leaves the timer usable; Android controls notification visibility.
 - `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MEDIA_PLAYBACK`: ongoing user-requested audio, media notification and lock-screen controls.
-- `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED`: added by WorkManager to finish short scheduled jobs reliably and restore scheduling after restart. They do not run a continuous timer service.
+- `FOREGROUND_SERVICE_SPECIAL_USE`: user-started Pomodoro countdown and its controls; the service stops when paused or finished.
+- `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED`: added by WorkManager to finish short scheduled jobs reliably and restore scheduling after restart. The timer service does not acquire a continuous wake lock.
 - `com.jawadmohammed.quranodoro.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`: AndroidX's app-private signature permission for internal receiver compatibility; it grants no access to personal data.
 
 No location, contacts, microphone, camera or storage permission is requested. Android's document picker handles export. Android cloud backup is disabled; the app does not transmit progress. External developer links open only when tapped. See [PRIVACY.md](PRIVACY.md).
@@ -79,8 +82,8 @@ For a release:
 
 1. Update `versionName` and increment `versionCode` in `app/build.gradle.kts`.
 2. Run all checks and device QA. Commit and push.
-3. Push the matching tag, for example `git tag v1.0.1` and `git push origin v1.0.1`.
-4. The release workflow requires all four secrets, checks version/tag agreement, runs unit tests and lint, builds and verifies the production APK, and publishes `Quranodoro-v1.0.1.apk` plus its SHA-256 checksum.
+3. Push the matching tag, for example `git tag v1.1.0` and `git push origin v1.1.0`.
+4. The release workflow requires all four secrets, checks version/tag agreement, runs unit tests and lint, builds and verifies the production APK, and publishes `Quranodoro-v1.1.0.apk` plus its SHA-256 checksum.
 
 Missing signing secrets fail the workflow before publication. No debug APK is substituted. Ordinary CI uploads a clearly named debug artifact. Any initial testing prerelease is explicitly labeled debug and is not a production release. A production-signed APK cannot update a debug-signed installation; export progress before removing a test installation.
 

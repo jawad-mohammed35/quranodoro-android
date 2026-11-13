@@ -3,6 +3,11 @@ package com.jawadmohammed.quranodoro.ui
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -20,6 +25,17 @@ fun FocusScreen(vm: AppViewModel) {
     val t by vm.timer.collectAsStateWithLifecycle()
     val remaining by vm.left.collectAsStateWithLifecycle()
     val prefs by vm.preferences.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.toggleTimer() }
+    fun toggle() {
+        if (!t.running && android.os.Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED &&
+            !prefs.timerPermissionAsked) {
+            vm.bool("timerPermissionAsked", true)
+            permission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else vm.toggleTimer()
+    }
+    val breathe by animateFloatAsState(if (t.running) 1f else .97f, label = "Timer intention")
     var custom by remember { mutableStateOf(false) }
     var reset by remember { mutableStateOf(false) }
     var skip by remember { mutableStateOf(false) }
@@ -27,6 +43,7 @@ fun FocusScreen(vm: AppViewModel) {
     Page {
         Heading("Make room for focus", "A little intention. A little progress.")
         Glass(Modifier.fillMaxWidth()) {
+            QText("YOUR QUIET MOMENT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 QText(t.phase, style = MaterialTheme.typography.titleMedium)
                 QText(
@@ -34,8 +51,8 @@ fun FocusScreen(vm: AppViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                val diameter = minOf(maxWidth, 280.dp)
+            BoxWithConstraints(Modifier.fillMaxWidth().graphicsLayer { scaleX = breathe; scaleY = breathe }, contentAlignment = Alignment.Center) {
+                val diameter = minOf(maxWidth, 240.dp)
                 Box(Modifier.size(diameter).padding(8.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         progress = {
@@ -55,7 +72,7 @@ fun FocusScreen(vm: AppViewModel) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        QText(time(remaining), fontSize = 48.sp, fontWeight = FontWeight.Light)
+                        QText(time(remaining), fontSize = 52.sp, fontWeight = FontWeight.Light)
                         QText(
                             if (t.running) "One moment at a time" else "Whenever you're ready",
                             style = MaterialTheme.typography.bodySmall,
@@ -65,7 +82,7 @@ fun FocusScreen(vm: AppViewModel) {
                 }
             }
             Button(
-                onClick = vm::toggleTimer,
+                onClick = ::toggle,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 shape = CircleShape,
             ) {
@@ -169,9 +186,9 @@ private fun PresetDialog(onDismiss: () -> Unit, onSave: (Preset) -> Unit) {
     var short by remember { mutableStateOf("5") }
     var long by remember { mutableStateOf("15") }
     var cycles by remember { mutableStateOf("4") }
-    Dialog(onDismissRequest = onDismiss) {
+    GlassDialog(onDismissRequest = onDismiss) {
         Glass(Modifier.heightIn(max = 620.dp).verticalScroll(rememberScrollState())) {
-            Heading("Your own rhythm")
+            QText("Your own rhythm", style = MaterialTheme.typography.titleLarge)
             OutlinedTextField(
                 name,
                 { name = it.take(60) },
