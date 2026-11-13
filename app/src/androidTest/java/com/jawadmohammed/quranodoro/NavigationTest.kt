@@ -87,12 +87,16 @@ class NavigationTest {
         }
         inspect("appearance", "Appearance")
         rule.onNodeWithText("Theme").performClick()
+        rule.waitForIdle()
+        Assert.assertEquals("Opening the picker must retain the selected appearance", "OLED Black", vm.preferences.value.theme)
+        rule.onNodeWithTag("glass-dialog-oled").assertExists()
         // API 26/27 captures the entire device window, while later versions can
         // capture the dialog alone. One center pixel can land on a text glyph or
         // a not-yet-presented system frame. Check the central surface region once
         // the window has rendered, keeping the assertion on actual black pixels.
         saveScreenshot("oled-picker-full-window", captureDialog())
         rule.waitUntil(5000) {
+            Assert.assertEquals("Appearance must stay OLED while the picker is open", "OLED Black", vm.preferences.value.theme)
             val dialog = captureDialog()
             val pixels = (2..8).flatMap { x -> (4..6).map { y ->
                 dialog.getPixel(dialog.width * x / 10, dialog.height * y / 10)

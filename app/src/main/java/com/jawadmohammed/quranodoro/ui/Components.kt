@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.Shape
@@ -227,7 +228,9 @@ fun GlassDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
         // Dialogs use a separate Android window. Bind the current palette explicitly
         // so a restored legacy window cannot keep its previous appearance.
         CompositionLocalProvider(LocalOled provides oled, LocalContentColor provides scheme.onSurface) {
-            MaterialTheme(colorScheme = scheme, typography = typography, shapes = shapes) { content() }
+            MaterialTheme(colorScheme = scheme, typography = typography, shapes = shapes) {
+                Box(Modifier.testTag(if (oled) "glass-dialog-oled" else "glass-dialog-standard")) { content() }
+            }
         }
     }
 }
