@@ -90,10 +90,8 @@ class NavigationTest {
         rule.waitForIdle()
         Assert.assertEquals("Opening the picker must retain the selected appearance", "OLED Black", vm.preferences.value.theme)
         rule.onNodeWithTag("glass-dialog-oled").assertExists()
-        // API 26/27 captures the entire device window, while later versions can
-        // capture the dialog alone. One center pixel can land on a text glyph or
-        // a not-yet-presented system frame. Check the central surface region once
-        // the window has rendered, keeping the assertion on actual black pixels.
+        // A center pixel can land on a text glyph. Check the central dialog
+        // surface region once rendered, retaining a strict true-black assertion.
         saveScreenshot("oled-picker-full-window", captureDialog())
         rule.waitUntil(5000) {
             Assert.assertEquals("Appearance must stay OLED while the picker is open", "OLED Black", vm.preferences.value.theme)
@@ -161,9 +159,38 @@ class NavigationTest {
 
     private fun captureDialog(): Bitmap {
         rule.waitForIdle()
-        // Compose cannot capture a dialog window on API 26 or 27.
+        // Compose's dialog capture needs API 28, but Android's Window PixelCopy
+        // exists on API 26. Capture the actual dialog buffer rather than the
+        // global compositor, which can retain a previous dialog frame in CI.
         if (android.os.Build.VERSION.SDK_INT < 28) {
-            return InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+            lateinit var window: android.view.Window
+            androidx.test.espresso.Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.isRoot())
+                .inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog())
+                .perform(object : androidx.test.espresso.ViewAction {
+                    override fun getDescription() = "Find the active Compose dialog window"
+                    override fun getConstraints(): org.hamcrest.Matcher<android.view.View> =
+                        androidx.test.espresso.matcher.ViewMatchers.isRoot()
+                    override fun perform(controller: androidx.test.espresso.UiController, view: android.view.View) {
+                        fun find(v: android.view.View): android.view.Window? {
+                            if (v is androidx.compose.ui.window.DialogWindowProvider) return v.window
+                            if (v is android.view.ViewGroup) for (index in 0 until v.childCount) {
+                                find(v.getChildAt(index))?.let { return it }
+                            }
+                            return null
+                        }
+                        window = requireNotNull(find(view)) { "Active dialog window was not found" }
+                    }
+                })
+            val image = Bitmap.createBitmap(window.decorView.width, window.decorView.height, Bitmap.Config.ARGB_8888)
+            val ready = java.util.concurrent.CountDownLatch(1)
+            var result = -1
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                android.view.PixelCopy.request(window, image, { status -> result = status; ready.countDown() },
+                    android.os.Handler(android.os.Looper.getMainLooper()))
+            }
+            Assert.assertTrue("Dialog PixelCopy callback timed out", ready.await(5, java.util.concurrent.TimeUnit.SECONDS))
+            Assert.assertEquals("Dialog PixelCopy must capture the actual surface", android.view.PixelCopy.SUCCESS, result)
+            return image
         }
         return rule.onNode(isDialog()).captureToImage().asAndroidBitmap()
     }
