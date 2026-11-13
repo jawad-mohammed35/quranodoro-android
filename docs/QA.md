@@ -6,7 +6,7 @@ Local API 26 validation passed all 25 instrumentation tests with real network au
 
 CI exposed a race where a repeated service start could overwrite the observer's updated Pause/Resume notification with the startup placeholder. The placeholder now posts only for a newly created service. Paused sessions retain an idle foreground service with no ticker, polling or wake lock; reset/stop/completion still end it. Auto-start now checks that the app is still foregrounded after asynchronous completion. Arabic reciter/Surah search text is retained in the compact selectors.
 
-CI's software emulator emitted invalid graphics-buffer errors around dialog captures. Its Vulkan backend is disabled explicitly, matching the stable local legacy setup. CI also retains device logs and screenshot artifacts. Signed 1.1.1 publication and follow-up upgrade results are recorded below once complete.
+CI's software emulator emitted invalid graphics-buffer errors around dialog captures. Its Vulkan backend is disabled explicitly, matching the stable local legacy setup. CI also retains device logs and screenshot artifacts. A retained API 26 capture confirmed a stale Light palette in an OLED dialog; dialogs now explicitly bind the current Material palette and OLED flag across their separate Android window. Signed 1.1.1 publication and follow-up upgrade results are recorded below once complete.
 
 ## Version 1.1.0 (November 13, 2026)
 

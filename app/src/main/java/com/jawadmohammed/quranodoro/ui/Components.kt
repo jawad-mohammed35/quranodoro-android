@@ -207,6 +207,9 @@ fun FrostedBackdrop(layer: androidx.compose.ui.graphics.layer.GraphicsLayer,
 @Composable
 fun GlassDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
     val oled = LocalOled.current
+    val scheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
+    val shapes = MaterialTheme.shapes
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest) {
         val view = androidx.compose.ui.platform.LocalView.current
         val context = androidx.compose.ui.platform.LocalContext.current
@@ -221,6 +224,10 @@ fun GlassDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
             }
             onDispose { window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND) }
         }
-        content()
+        // Dialogs use a separate Android window. Bind the current palette explicitly
+        // so a restored legacy window cannot keep its previous appearance.
+        CompositionLocalProvider(LocalOled provides oled, LocalContentColor provides scheme.onSurface) {
+            MaterialTheme(colorScheme = scheme, typography = typography, shapes = shapes) { content() }
+        }
     }
 }
