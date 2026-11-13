@@ -87,11 +87,17 @@ class NavigationTest {
         }
         inspect("appearance", "Appearance")
         rule.onNodeWithText("Theme").performClick()
-        val dialog = captureDialog()
-        Assert.assertEquals(
-            android.graphics.Color.BLACK,
-            dialog.getPixel(dialog.width / 2, dialog.height / 2),
-        )
+        // API 26/27 captures the entire device window, while later versions can
+        // capture the dialog alone. One center pixel can land on a text glyph or
+        // a not-yet-presented system frame. Check the central surface region once
+        // the window has rendered, keeping the assertion on actual black pixels.
+        rule.waitUntil(5000) {
+            val dialog = captureDialog()
+            val pixels = (2..8).flatMap { x -> (4..6).map { y ->
+                dialog.getPixel(dialog.width * x / 10, dialog.height * y / 10)
+            } }
+            pixels.count { it == android.graphics.Color.BLACK } > pixels.size * 2 / 3
+        }
         rule.onNodeWithText("Close").performClick()
         rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
         rule.onNodeWithText("About the Developer").performScrollTo().performClick()
